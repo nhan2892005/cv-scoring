@@ -1,4 +1,4 @@
-"""Streamlit UI for AI CV Screening — resumescreening.ai-inspired layout.
+"""Streamlit UI for AI CV Screening — SaaS-grade redesign.
 
 Run:  streamlit run app.py
 """
@@ -19,108 +19,480 @@ st.set_page_config(
     page_title="AI Resume Screening",
     page_icon="🎯",
     layout="wide",
+    initial_sidebar_state="collapsed",
 )
 
-# ---------- Global styles ----------
+# ---------- Design tokens + global styles ----------
 st.markdown(
     """
     <style>
-      .main .block-container {padding-top: 2rem; max-width: 1200px;}
-      h1.brand {font-weight: 800; font-size: 2.2rem; margin-bottom: 0.2rem;}
-      .brand-accent {color: #2563eb;}
-      .sub {color: #64748b; font-size: 0.95rem; margin-bottom: 1.6rem;}
+      /* ---------- Design tokens ---------- */
+      :root {
+        --bg: #f7f8fb;
+        --surface: #ffffff;
+        --border: #e5e7eb;
+        --border-strong: #d1d5db;
+        --muted: #6b7280;
+        --text: #0f172a;
+        --text-soft: #334155;
+        --primary: #4f46e5;
+        --primary-600: #4338ca;
+        --primary-50: #eef2ff;
+        --success: #059669;
+        --success-50: #ecfdf5;
+        --warning: #d97706;
+        --warning-50: #fffbeb;
+        --danger: #dc2626;
+        --danger-50: #fef2f2;
+        --radius-sm: 8px;
+        --radius: 12px;
+        --radius-lg: 16px;
+        --shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
+        --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+      }
+
+      html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+        color: var(--text);
+      }
+      .stApp { background: var(--bg); }
+
+      /* ---------- Container ---------- */
+      .main .block-container {
+        padding-top: 2.5rem;
+        padding-bottom: 4rem;
+        max-width: 1120px;
+      }
+
+      /* ---------- Header ---------- */
+      .eyebrow {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--primary);
+        background: var(--primary-50);
+        padding: 5px 10px;
+        border-radius: 999px;
+        margin-bottom: 14px;
+      }
+      h1.brand {
+        font-weight: 700;
+        font-size: 2rem;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        color: var(--text);
+        margin: 0 0 10px 0;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.55;
+        max-width: 640px;
+        margin-bottom: 2rem;
+      }
+
+      /* ---------- Panels ---------- */
       .panel {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1.2rem 1.3rem;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.35rem 1.35rem;
+        box-shadow: var(--shadow-xs);
+        height: 100%;
       }
-      .panel h3 {margin-top: 0; margin-bottom: 0.6rem; font-size: 1rem; color:#0f172a;}
+      .panel-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .panel-icon {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: var(--primary-50);
+        color: var(--primary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem;
+      }
+      .panel-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text);
+        margin: 0;
+      }
+      .panel-hint {
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin: 0;
+      }
+
+      /* ---------- Inputs ---------- */
+      .stTextArea textarea {
+        border-radius: var(--radius) !important;
+        border: 1px solid var(--border) !important;
+        background: #fcfcfd !important;
+        font-size: 0.9rem !important;
+        padding: 12px 14px !important;
+        transition: border-color 120ms, box-shadow 120ms;
+      }
+      .stTextArea textarea:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important;
+      }
+      [data-testid="stFileUploader"] section {
+        border-radius: var(--radius) !important;
+        border: 1.5px dashed var(--border-strong) !important;
+        background: #fcfcfd !important;
+        padding: 1.2rem !important;
+      }
+      [data-testid="stFileUploader"] section:hover {
+        border-color: var(--primary) !important;
+        background: var(--primary-50) !important;
+      }
+
+      /* ---------- Primary button ---------- */
+      .stButton > button {
+        background: var(--primary) !important;
+        color: white !important;
+        border: 1px solid var(--primary-600) !important;
+        border-radius: var(--radius) !important;
+        font-weight: 600 !important;
+        font-size: 0.92rem !important;
+        padding: 0.7rem 1.4rem !important;
+        letter-spacing: -0.005em !important;
+        box-shadow: var(--shadow-sm) !important;
+        transition: all 120ms !important;
+      }
+      .stButton > button:hover {
+        background: var(--primary-600) !important;
+        transform: translateY(-1px);
+      }
+      .stButton > button:active { transform: translateY(0); }
+
+      /* ---------- Report section ---------- */
+      .report-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin: 3rem 0 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .report-head h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .section-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 2rem 0 0.75rem;
+      }
+
+      /* ---------- Score card ---------- */
       .score-card {
-        background: linear-gradient(135deg,#2563eb 0%,#7c3aed 100%);
-        color: white; border-radius: 14px; padding: 1.4rem;
+        background: linear-gradient(140deg, #4f46e5 0%, #6366f1 45%, #7c3aed 100%);
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: 1.5rem 1.6rem;
+        box-shadow: 0 10px 25px -12px rgba(79,70,229,0.4);
       }
-      .score-card .big {font-size: 3rem; font-weight: 800; line-height: 1;}
-      .score-card .lbl {opacity: 0.85; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;}
+      .score-card .lbl {
+        opacity: 0.78;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-weight: 600;
+      }
+      .score-card .big {
+        font-size: 3.4rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        margin-top: 10px;
+      }
+      .score-card .big small {
+        font-size: 1.1rem;
+        opacity: 0.7;
+        font-weight: 500;
+        letter-spacing: 0;
+      }
       .grade-chip {
-        display:inline-block; padding:6px 14px; border-radius:999px;
-        color:white; font-weight:700; font-size:0.85rem;
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 999px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.78rem;
+        letter-spacing: 0.01em;
       }
-      .decision-box {
-        padding: 14px 16px; border-radius: 10px;
-        background: #f8fafc; border-left: 6px solid #2563eb; margin-top: 12px;
+      .score-meta {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
-      .stButton>button[kind="primary"] {
-        background: linear-gradient(135deg,#2563eb,#7c3aed);
-        border: none; font-weight: 700; padding: 0.75rem 1rem;
+      .score-meta .conf {
+        opacity: 0.85;
+        font-size: 0.82rem;
       }
+
+      /* ---------- Decision card ---------- */
+      .decision-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--primary);
+        border-radius: var(--radius);
+        padding: 1.15rem 1.3rem;
+        height: 100%;
+      }
+      .decision-card .dec-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .decision-card .dec-value {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 4px 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .decision-card .dec-reason {
+        color: var(--text-soft);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      /* ---------- List cards ---------- */
+      .list-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.1rem 1.2rem;
+        height: 100%;
+      }
+      .list-card h4 {
+        margin: 0 0 0.7rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .list-card ul { margin: 0; padding-left: 1.1rem; }
+      .list-card li {
+        font-size: 0.88rem;
+        color: var(--text-soft);
+        line-height: 1.55;
+        margin-bottom: 6px;
+      }
+
+      /* ---------- Progress bars ---------- */
+      .stProgress > div > div > div > div {
+        background: var(--primary) !important;
+        border-radius: 999px !important;
+      }
+      .stProgress > div > div > div {
+        background: #eef0f4 !important;
+        border-radius: 999px !important;
+      }
+
+      /* ---------- Expanders ---------- */
+      .streamlit-expanderHeader, [data-testid="stExpander"] summary {
+        border-radius: var(--radius) !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+      }
+      [data-testid="stExpander"] {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        background: var(--surface) !important;
+        margin-bottom: 10px !important;
+      }
+
+      /* ---------- Tabs ---------- */
+      .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background: var(--surface);
+        padding: 6px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+      }
+      .stTabs [data-baseweb="tab"] {
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        font-size: 0.88rem !important;
+        padding: 8px 14px !important;
+      }
+      .stTabs [aria-selected="true"] {
+        background: var(--primary-50) !important;
+        color: var(--primary) !important;
+      }
+
+      /* ---------- Dividers ---------- */
+      hr { border-color: var(--border) !important; }
+
+      /* Hide streamlit chrome */
+      #MainMenu, footer, header { visibility: hidden; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # ---------- Header ----------
+st.markdown('<div class="eyebrow">AI · Recruiter Panel</div>', unsafe_allow_html=True)
+st.markdown('<h1 class="brand">Resume Screening, powered by Claude</h1>', unsafe_allow_html=True)
 st.markdown(
-    '<h1 class="brand">🎯 AI <span class="brand-accent">Resume Screening</span></h1>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    '<div class="sub">1. Paste the job description on the left. '
-    "2. Upload a CV on the right. "
-    "3. Click <b>Analyze</b> for a full recruiter-grade breakdown.</div>",
+    '<p class="sub">Paste a job description, upload a CV, and get a recruiter-grade evaluation '
+    "with scores, weak-bullet rewrites, skill-gap analysis, and a hire decision.</p>",
     unsafe_allow_html=True,
 )
 
-# ---------- Input: two-column layout ----------
+# ---------- Input grid ----------
 col_jd, col_cv = st.columns(2, gap="large")
 
 with col_jd:
-    st.markdown('<div class="panel"><h3>📋 Job Description</h3>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="panel"><div class="panel-head">'
+        '<div class="panel-icon">📋</div>'
+        '<div><p class="panel-title">Job Description</p>'
+        '<p class="panel-hint">Paste the full JD — role, must-haves, nice-to-haves.</p></div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
     jd_text = st.text_area(
-        "Paste the full JD here",
-        height=340,
+        "JD",
+        height=320,
         key="jd_text",
         label_visibility="collapsed",
-        placeholder="Paste the full job description here...",
+        placeholder="e.g. Senior Backend Engineer — 5+ yrs Python, distributed systems...",
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_cv:
-    st.markdown('<div class="panel"><h3>📄 Upload CV</h3>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="panel"><div class="panel-head">'
+        '<div class="panel-icon">📄</div>'
+        '<div><p class="panel-title">Candidate CV</p>'
+        '<p class="panel-hint">PDF, DOCX, or TXT — use a text export, not a scan.</p></div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
     uploaded = st.file_uploader(
-        "PDF / DOCX / TXT",
+        "CV",
         type=["pdf", "docx", "txt"],
         label_visibility="collapsed",
     )
-    st.caption("Accepts PDF, DOCX, or TXT. Use a text-based export (not a scanned image).")
+
+    st.write("")
+    JOB_TITLES = [
+        "AI Engineer",
+        "Machine Learning Engineer",
+        "Data Scientist",
+        "Data Engineer",
+        "Data Analyst",
+        "MLOps Engineer",
+        "LLM Engineer",
+        "Computer Vision Engineer",
+        "NLP Engineer",
+        "Research Scientist",
+        "Software Engineer",
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Full-Stack Engineer",
+        "Mobile Engineer (iOS)",
+        "Mobile Engineer (Android)",
+        "DevOps Engineer",
+        "Site Reliability Engineer (SRE)",
+        "Cloud Engineer",
+        "Platform Engineer",
+        "Security Engineer",
+        "QA / Test Engineer",
+        "Embedded Engineer",
+        "Game Developer",
+        "Blockchain Engineer",
+        "Solutions Architect",
+        "Engineering Manager",
+        "Product Manager",
+        "Technical Product Manager",
+        "UI/UX Designer",
+        "Business Analyst",
+    ]
+    LEVELS = ["Intern", "Fresher", "Junior", "Mid", "Senior", "Lead", "Principal", "Manager"]
+
+    dc1, dc2 = st.columns(2, gap="small")
+    with dc1:
+        st.markdown(
+            '<div style="font-size:0.78rem;font-weight:600;color:var(--muted);'
+            'margin-bottom:4px">Job Title</div>',
+            unsafe_allow_html=True,
+        )
+        job_title = st.selectbox(
+            "Job Title",
+            JOB_TITLES,
+            index=0,
+            label_visibility="collapsed",
+            placeholder="Search a role...",
+        )
+    with dc2:
+        st.markdown(
+            '<div style="font-size:0.78rem;font-weight:600;color:var(--muted);'
+            'margin-bottom:4px">Level</div>',
+            unsafe_allow_html=True,
+        )
+        level = st.selectbox(
+            "Level",
+            LEVELS,
+            index=3,
+            label_visibility="collapsed",
+        )
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.write("")
-analyze = st.button(
-    "🚀 Analyze CV",
-    type="primary",
-    use_container_width=True,
-)
+
+# Right-sized CTA (not stretched)
+btn_l, btn_c, btn_r = st.columns([1, 1.2, 1])
+with btn_c:
+    analyze = st.button("🚀  Analyze Candidate", type="primary", use_container_width=True)
+
 
 # ---------- Helpers ----------
 def grade_color(grade: str) -> str:
     return {
-        "Strong Hire": "#16a34a",
-        "Good Fit": "#22c55e",
-        "Moderate": "#f59e0b",
-        "Weak": "#ef4444",
-    }.get(grade, "#64748b")
+        "Strong Hire": "#059669",
+        "Good Fit": "#10b981",
+        "Moderate": "#d97706",
+        "Weak": "#dc2626",
+    }.get(grade, "#6b7280")
 
 
 def recommendation_color(rec: str) -> str:
-    return {"Hire": "#16a34a", "Consider": "#f59e0b", "Reject": "#ef4444"}.get(rec, "#64748b")
+    return {"Hire": "#059669", "Consider": "#d97706", "Reject": "#dc2626"}.get(rec, "#6b7280")
 
 
 def render_score_bar(label: str, value: float, max_value: float) -> None:
     pct = 0 if max_value == 0 else min(1.0, value / max_value)
-    st.markdown(f"**{label}** — {value:.0f} / {max_value:.0f}")
-    st.progress(pct)
+    c1, c2 = st.columns([4, 1])
+    with c1:
+        st.markdown(
+            f'<div style="font-size:0.88rem;font-weight:500;color:var(--text-soft);margin-bottom:4px">{label}</div>',
+            unsafe_allow_html=True,
+        )
+        st.progress(pct)
+    with c2:
+        st.markdown(
+            f'<div style="text-align:right;font-size:0.92rem;font-weight:600;padding-top:2px">'
+            f'{value:.0f}<span style="color:var(--muted);font-weight:400"> / {max_value:.0f}</span></div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ---------- Run analysis ----------
@@ -149,28 +521,38 @@ except Exception as e:
 if len(cv_text) < 80:
     st.warning("Parsed CV looks very short — scanned PDF? Try a text-based export.")
 
-with st.status("🧠 Senior recruiter panel is reviewing...", expanded=True) as status:
+with st.status("🧠  Senior recruiter panel is reviewing...", expanded=True) as status:
     def log(msg: str) -> None:
         st.write(msg)
 
     log(f"📄 CV parsed locally — {len(cv_text):,} characters extracted")
+    log(f"🎯 Target role: {level} {job_title}")
+    jd_full = (
+        f"TARGET ROLE: {job_title}\n"
+        f"SENIORITY LEVEL: {level}\n\n"
+        f"{jd_text}"
+    )
     try:
         result = screen_candidate(
-            jd_text, cv_text, api_key=api_key, model=model, progress=log
+            jd_full, cv_text, api_key=api_key, model=model, progress=log
         )
     except Exception as e:
-        status.update(label="❌ AI pipeline failed", state="error")
+        status.update(label="❌  AI pipeline failed", state="error")
         st.error(f"AI pipeline error: {e}")
         st.stop()
-    status.update(label="✅ Analysis complete", state="complete", expanded=False)
+    status.update(label="✅  Analysis complete", state="complete", expanded=False)
 
 ev = result.evaluation
 
-# ---------- Section 1: Overall Score ----------
-st.divider()
-st.subheader("📊 Evaluation Report")
+# ---------- Report header ----------
+st.markdown(
+    '<div class="report-head"><h2>Evaluation Report</h2>'
+    '<span style="font-size:0.8rem;color:var(--muted)">Claude · senior recruiter panel</span></div>',
+    unsafe_allow_html=True,
+)
 
-top_l, top_r = st.columns([1, 2], gap="large")
+# ---------- Section: Overall Score + Decision ----------
+top_l, top_r = st.columns([1, 1.35], gap="large")
 with top_l:
     grade = ev.get("grade", "Weak")
     score = ev.get("overall_score", 0)
@@ -179,10 +561,10 @@ with top_l:
         f"""
         <div class="score-card">
           <div class="lbl">Overall Score</div>
-          <div class="big">{score}<span style="font-size:1.2rem;opacity:0.8">/100</span></div>
-          <div style="margin-top:10px">
+          <div class="big">{score}<small> / 100</small></div>
+          <div class="score-meta">
             <span class="grade-chip" style="background:{grade_color(grade)}">{grade}</span>
-            <span style="margin-left:10px;opacity:0.9">Confidence: {conf:.0f}%</span>
+            <span class="conf">Confidence · {conf:.0f}%</span>
           </div>
         </div>
         """,
@@ -194,38 +576,48 @@ with top_r:
     reason = ev.get("hiring_decision", {}).get("reason", "")
     st.markdown(
         f"""
-        <div class="decision-box" style="border-left-color:{recommendation_color(rec)}">
-          <b style="color:{recommendation_color(rec)};font-size:1.05rem">Decision: {rec}</b>
-          <div style="margin-top:6px;color:#334155">{reason}</div>
+        <div class="decision-card" style="border-left-color:{recommendation_color(rec)}">
+          <div class="dec-label">Hiring Decision</div>
+          <div class="dec-value" style="color:{recommendation_color(rec)}">{rec}</div>
+          <div class="dec-reason">{reason}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("**Hiring manager summary**")
-    st.write(ev.get("summary", ""))
 
-# ---------- Section 2: Strengths / Weaknesses ----------
-st.markdown("### ✅ Strengths & ⚠️ Weaknesses")
-cA, cB = st.columns(2)
+st.write("")
+st.markdown(
+    '<div style="background:var(--surface);border:1px solid var(--border);'
+    'border-radius:var(--radius);padding:1.1rem 1.3rem">'
+    '<div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;'
+    'text-transform:uppercase;color:var(--muted);margin-bottom:6px">Hiring Manager Summary</div>'
+    f'<div style="color:var(--text-soft);font-size:0.92rem;line-height:1.6">{ev.get("summary","")}</div>'
+    "</div>",
+    unsafe_allow_html=True,
+)
+
+# ---------- Strengths / Weaknesses ----------
+st.markdown('<div class="section-label">Strengths & Weaknesses</div>', unsafe_allow_html=True)
+cA, cB = st.columns(2, gap="medium")
 with cA:
-    st.markdown("**Strengths**")
-    for s in ev.get("strengths", []):
-        st.markdown(f"- {s}")
+    items = "".join(f"<li>{s}</li>" for s in ev.get("strengths", []))
+    st.markdown(
+        f'<div class="list-card" style="border-left:3px solid var(--success)">'
+        f'<h4>✅ Strengths</h4><ul>{items or "<li>—</li>"}</ul></div>',
+        unsafe_allow_html=True,
+    )
 with cB:
-    st.markdown("**Weaknesses**")
-    for w in ev.get("weaknesses", []):
-        st.markdown(f"- {w}")
+    items = "".join(f"<li>{w}</li>" for w in ev.get("weaknesses", []))
+    st.markdown(
+        f'<div class="list-card" style="border-left:3px solid var(--warning)">'
+        f'<h4>⚠️ Weaknesses</h4><ul>{items or "<li>—</li>"}</ul></div>',
+        unsafe_allow_html=True,
+    )
 
-# ---------- Section 3: Breakdown ----------
-st.markdown("### 📈 Score Breakdown")
+# ---------- Breakdown ----------
+st.markdown('<div class="section-label">Score Breakdown</div>', unsafe_allow_html=True)
 dims = ev.get("dimension_scores", {})
-max_map = {
-    "jd_match": 40,
-    "cv_quality": 25,
-    "experience_depth": 10,
-    "formatting": 15,
-    "risk": 10,
-}
+max_map = {"jd_match": 40, "cv_quality": 25, "experience_depth": 10, "formatting": 15, "risk": 10}
 labels = {
     "jd_match": "JD Match",
     "cv_quality": "CV Quality",
@@ -233,14 +625,21 @@ labels = {
     "formatting": "Formatting / ATS",
     "risk": "Risk (higher = safer)",
 }
+st.markdown(
+    '<div style="background:var(--surface);border:1px solid var(--border);'
+    'border-radius:var(--radius);padding:1.3rem 1.4rem">',
+    unsafe_allow_html=True,
+)
 for key, mx in max_map.items():
     render_score_bar(labels[key], float(dims.get(key, 0)), mx)
+    st.write("")
+st.markdown("</div>", unsafe_allow_html=True)
 
-# ---------- Section 4: Issues & Improvements ----------
-st.markdown("### 🛠️ Issues & Improvements")
+# ---------- Issues & Improvements ----------
+st.markdown('<div class="section-label">Issues & Improvements</div>', unsafe_allow_html=True)
 imp = ev.get("improvements", {})
 
-with st.expander("📝 Content Issues — weak bullets & rewrites", expanded=True):
+with st.expander("📝  Content Issues — weak bullets & rewrites", expanded=True):
     issues = imp.get("content_issues", [])
     if not issues:
         st.success("No major content issues detected.")
@@ -251,7 +650,7 @@ with st.expander("📝 Content Issues — weak bullets & rewrites", expanded=Tru
         st.markdown(f"✨ *Improved:* **{issue.get('improved_version','')}**")
         st.divider()
 
-with st.expander("🎯 Skill Gaps"):
+with st.expander("🎯  Skill Gaps"):
     gaps = imp.get("skill_gaps", {})
     g1, g2, g3 = st.columns(3)
     with g1:
@@ -267,31 +666,31 @@ with st.expander("🎯 Skill Gaps"):
         for s in gaps.get("transferable", []):
             st.markdown(f"- {s}")
 
-with st.expander("📐 Positioning"):
+with st.expander("📐  Positioning"):
     for p in imp.get("positioning_issues", []):
         st.markdown(f"**Problem:** {p.get('problem','')}")
         st.markdown(f"**Rewritten Summary:**\n\n> {p.get('rewritten_summary','')}")
         st.divider()
 
-with st.expander("📈 Experience Issues"):
+with st.expander("📈  Experience Issues"):
     for x in imp.get("experience_issues", []):
         st.markdown(f"- {x}")
 
-with st.expander("🧾 Formatting / ATS Issues"):
+with st.expander("🧾  Formatting / ATS Issues"):
     for x in imp.get("formatting_issues", []):
         st.markdown(f"- {x}")
 
-with st.expander("🚩 Red Flags"):
+with st.expander("🚩  Red Flags"):
     flags = imp.get("red_flags", [])
     if not flags:
         st.success("No red flags detected.")
     for f in flags:
         st.markdown(f"- **{f.get('flag','')}** — {f.get('risk_explanation','')}")
 
-# ---------- Section 5: Suggestions ----------
-st.markdown("### 💡 Suggestions")
+# ---------- Suggestions ----------
+st.markdown('<div class="section-label">Suggestions</div>', unsafe_allow_html=True)
 sug = ev.get("suggestions", {})
-tab1, tab2, tab3 = st.tabs(["🔧 Micro Fixes", "🏗️ Macro Fixes", "🧭 Strategic Advice"])
+tab1, tab2, tab3 = st.tabs(["🔧  Micro Fixes", "🏗️  Macro Fixes", "🧭  Strategic"])
 with tab1:
     for s in sug.get("micro_fixes", []):
         st.markdown(f"- {s}")
@@ -303,7 +702,8 @@ with tab3:
         st.markdown(f"- {s}")
 
 # ---------- Raw + download ----------
-with st.expander("🔍 Raw JSON (JD + CV understanding + Evaluation)"):
+st.write("")
+with st.expander("🔍  Raw JSON (JD + CV understanding + Evaluation)"):
     st.json(
         {
             "jd_understanding": result.jd_understanding,
@@ -313,7 +713,7 @@ with st.expander("🔍 Raw JSON (JD + CV understanding + Evaluation)"):
     )
 
 st.download_button(
-    "⬇️ Download full report (JSON)",
+    "⬇️  Download full report (JSON)",
     data=json.dumps(
         {
             "jd_understanding": result.jd_understanding,
