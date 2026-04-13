@@ -1,0 +1,33 @@
+Nguyen Van A
+Backend Engineer | Ho Chi Minh City | nguyenvana@email.com
+
+SUMMARY
+Passionate backend developer with experience building web applications. Team player, fast learner, and always eager to take on new challenges.
+
+EXPERIENCE
+
+Backend Engineer — FastShop E-commerce
+Jun 2021 - Present
+- Worked on backend services using Python and Django
+- Responsible for API development
+- Helped improve system performance
+- Collaborated with frontend team on various features
+- Participated in code reviews
+
+Software Engineer — BrightApps Studio
+Aug 2019 - May 2021
+- Developed features for mobile app backend
+- Fixed bugs reported by QA
+- Wrote unit tests
+- Used MySQL for data storage
+
+Intern — TechStart JSC
+Jan 2019 - Jul 2019
+- Assisted senior developers
+- Learned about software development lifecycle
+
+SKILLS
+Python, Django, Flask, MySQL, Git, REST APIs, HTML/CSS, JavaScript (basic), teamwork, communication
+
+EDUCATION
+B.Sc. Computer Science — HCMC University of Technology, 2019
