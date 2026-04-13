@@ -9,6 +9,7 @@ import os
 
 import streamlit as st
 from dotenv import load_dotenv
+from streamlit_searchbox import st_searchbox
 
 from ai_engine import DEFAULT_MODEL, screen_candidate
 from cv_parser import parse_cv
@@ -294,8 +295,10 @@ st.markdown(
 )
 
 # ---------- Header ----------
-st.markdown('<div class="eyebrow">Recruiter Assessment Panel</div>', unsafe_allow_html=True)
-st.markdown('<h1 class="brand">CANDIDATE SCREENING REPORT</h1>', unsafe_allow_html=True)
+st.markdown('<div class="eyebrow">Recruiter Assessment Panel</div>',
+            unsafe_allow_html=True)
+st.markdown('<h1 class="brand">CANDIDATE SCREENING REPORT</h1>',
+            unsafe_allow_html=True)
 st.markdown(
     '<p class="sub">Input job requirements and candidate profile to generate a formal evaluation report.</p>',
     unsafe_allow_html=True,
@@ -369,7 +372,8 @@ with col_cv:
         "UI/UX Designer",
         "Business Analyst",
     ]
-    LEVELS = ["Intern", "Fresher", "Junior", "Mid", "Senior", "Lead", "Principal", "Manager"]
+    LEVELS = ["Intern", "Fresher", "Junior", "Mid",
+              "Senior", "Lead", "Principal", "Manager"]
 
     dc1, dc2 = st.columns(2, gap="small")
     with dc1:
@@ -378,11 +382,22 @@ with col_cv:
             'margin-bottom:4px;text-transform:uppercase;">Job Title</div>',
             unsafe_allow_html=True,
         )
-        job_title = st.selectbox(
-            "Job Title",
-            JOB_TITLES,
-            index=0,
-            label_visibility="collapsed",
+
+        def _search_jobs(term: str) -> list[str]:
+            term = (term or "").strip()
+            if not term:
+                return JOB_TITLES
+            low = term.lower()
+            matches = [j for j in JOB_TITLES if low in j.lower()]
+            if term not in matches:
+                matches = [term] + matches
+            return matches
+
+        job_title = st_searchbox(
+            _search_jobs,
+            key="job_title_search",
+            placeholder="Enter role...",
+            default_use_searchterm=True,
         )
     with dc2:
         st.markdown(
@@ -403,12 +418,14 @@ st.write("")
 # Right-sized CTA
 btn_l, btn_c, btn_r = st.columns([1, 1.2, 1])
 with btn_c:
-    analyze = st.button("Generate Evaluation Report", type="primary", use_container_width=True)
+    analyze = st.button("Generate Evaluation Report",
+                        type="primary", use_container_width=True)
 
 
 # ---------- Helpers ----------
 def get_grade_label(grade: str) -> str:
     return f"[{grade.upper()}]"
+
 
 def get_recommendation_label(rec: str) -> str:
     return f"[{rec.upper()}]"
@@ -476,7 +493,8 @@ with st.status("PROCESSING EVALUATION...", expanded=True) as status:
         status.update(label="[FAIL] Processing Error", state="error")
         st.error(f"System error: {e}")
         st.stop()
-    status.update(label="[COMPLETE] Evaluation Generated", state="complete", expanded=False)
+    status.update(label="[COMPLETE] Evaluation Generated",
+                  state="complete", expanded=False)
 
 ev = result.evaluation
 
@@ -509,7 +527,7 @@ with top_l:
 with top_r:
     rec = ev.get("hiring_decision", {}).get("recommendation", "Consider")
     reason = ev.get("hiring_decision", {}).get("reason", "")
-    
+
     # Decide label color conceptually, but use black border physically
     st.markdown(
         f"""
@@ -526,13 +544,14 @@ st.write("")
 st.markdown(
     '<div style="border:1px solid var(--border-default); background:var(--bg-secondary); padding:16px;">'
     '<div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--text-primary);margin-bottom:8px;">Executive Summary</div>'
-    f'<div style="color:var(--text-secondary);font-size:14px;line-height:1.6">{ev.get("summary","")}</div>'
+    f'<div style="color:var(--text-secondary);font-size:14px;line-height:1.6">{ev.get("summary", "")}</div>'
     "</div>",
     unsafe_allow_html=True,
 )
 
 # ---------- Strengths / Weaknesses ----------
-st.markdown('<div class="section-label">Profile Assessment</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Profile Assessment</div>',
+            unsafe_allow_html=True)
 cA, cB = st.columns(2, gap="medium")
 with cA:
     items = "".join(f"<li>{s}</li>" for s in ev.get("strengths", []))
@@ -550,9 +569,11 @@ with cB:
     )
 
 # ---------- Breakdown ----------
-st.markdown('<div class="section-label">Score Analytics</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Score Analytics</div>',
+            unsafe_allow_html=True)
 dims = ev.get("dimension_scores", {})
-max_map = {"jd_match": 40, "cv_quality": 25, "experience_depth": 10, "formatting": 15, "risk": 10}
+max_map = {"jd_match": 40, "cv_quality": 25,
+           "experience_depth": 10, "formatting": 15, "risk": 10}
 labels = {
     "jd_match": "REQUIREMENT MATCH",
     "cv_quality": "DOCUMENT QUALITY",
@@ -570,7 +591,8 @@ for key, mx in max_map.items():
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------- Issues & Improvements ----------
-st.markdown('<div class="section-label">Detailed Audit</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Detailed Audit</div>',
+            unsafe_allow_html=True)
 imp = ev.get("improvements", {})
 
 with st.expander("CONTENT AUDIT", expanded=True):
@@ -578,10 +600,11 @@ with st.expander("CONTENT AUDIT", expanded=True):
     if not issues:
         st.markdown("*No significant content issues detetced.*")
     for i, issue in enumerate(issues, 1):
-        st.markdown(f"**ITEM {i} — `{issue.get('issue_type','').upper()}`**")
-        st.markdown(f"**Original Text:** {issue.get('original','')}")
-        st.markdown(f"**Identified Problem:** {issue.get('problem','')}")
-        st.markdown(f"**Suggested Revision:** {issue.get('improved_version','')}")
+        st.markdown(f"**ITEM {i} — `{issue.get('issue_type', '').upper()}`**")
+        st.markdown(f"**Original Text:** {issue.get('original', '')}")
+        st.markdown(f"**Identified Problem:** {issue.get('problem', '')}")
+        st.markdown(
+            f"**Suggested Revision:** {issue.get('improved_version', '')}")
         st.divider()
 
 with st.expander("SKILL GAP ANALYSIS"):
@@ -602,8 +625,9 @@ with st.expander("SKILL GAP ANALYSIS"):
 
 with st.expander("POSITIONING EVALUATION"):
     for p in imp.get("positioning_issues", []):
-        st.markdown(f"**Observation:** {p.get('problem','')}")
-        st.markdown(f"**Alternative Framing:**\n{p.get('rewritten_summary','')}")
+        st.markdown(f"**Observation:** {p.get('problem', '')}")
+        st.markdown(
+            f"**Alternative Framing:**\n{p.get('rewritten_summary', '')}")
         st.divider()
 
 with st.expander("EXPERIENCE CONTINUITY"):
@@ -619,12 +643,15 @@ with st.expander("RISK INDICATORS"):
     if not flags:
         st.markdown("*No primary risk indicators detected.*")
     for f in flags:
-        st.markdown(f"- **{f.get('flag','')}** — {f.get('risk_explanation','')}")
+        st.markdown(
+            f"- **{f.get('flag', '')}** — {f.get('risk_explanation', '')}")
 
 # ---------- Suggestions ----------
-st.markdown('<div class="section-label">Actionable Directives</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">Actionable Directives</div>',
+            unsafe_allow_html=True)
 sug = ev.get("suggestions", {})
-tab1, tab2, tab3 = st.tabs(["TACTICAL FIXES", "STRUCTURAL CHANGES", "STRATEGIC ADVICE"])
+tab1, tab2, tab3 = st.tabs(
+    ["TACTICAL FIXES", "STRUCTURAL CHANGES", "STRATEGIC ADVICE"])
 with tab1:
     for s in sug.get("micro_fixes", []):
         st.markdown(f"- {s}")
