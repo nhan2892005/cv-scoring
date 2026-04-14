@@ -131,16 +131,6 @@ export default function Home() {
   const [compareMarket, setCompareMarket] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
-  // ── Login Tracking ──────────────────────────────────────────────────────────
-  // Fires once per browser session when the user becomes authenticated
-  const loginTracked = useRef(false);
-  useEffect(() => {
-    if (session?.user?.email && !loginTracked.current) {
-      loginTracked.current = true;
-      fetch("/api/track/login", { method: "POST" }).catch(console.error);
-    }
-  }, [session?.user?.email]);
-
   const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
 
   function addLog(msg: string) {
