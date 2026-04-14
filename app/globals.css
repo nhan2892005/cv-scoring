@@ -1005,3 +1005,30 @@ textarea::placeholder { color: var(--ink-4); }
 .btn-logout:hover {
   color: var(--red);
 }
+
+.btn-google-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--ink-2);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-google-header:hover {
+  background: var(--bg);
+  border-color: var(--border-h);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-google-header svg {
+  width: 14px;
+  height: 14px;
+}
