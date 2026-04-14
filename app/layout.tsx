@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "AI-powered CV screening and gap analysis for technical roles.",
 };
 
+import SessionProviderWrapper from "./components/SessionProviderWrapper";
+
 export default function RootLayout({
   children,
 }: {
@@ -22,7 +24,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+      </body>
     </html>
   );
 }
