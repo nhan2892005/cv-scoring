@@ -20,6 +20,125 @@ function recColor(rec: string) {
   return { Hire: "#059669", Consider: "#d97706", Reject: "#dc2626" }[rec] ?? "#6b7280";
 }
 
+// ─── i18n ──────────────────────────────────────────────────────────────────────
+type Lang = "en" | "vi";
+const I18N = {
+  en: {
+    brand: "CV Evaluation",
+    signIn: "Sign in with Google",
+    logout: "Log out",
+    heroLabel: "AI Hiring Assistant",
+    heroTitle1: "Screen candidates ",
+    heroTitle2: "smarter",
+    heroTitle3: ", not faster.",
+    heroSub: "Professional AI-powered CV analysis, multi-dimensional scoring, and concrete improvement suggestions — in seconds.",
+    jd: "Job Description",
+    jdPlaceholder: "Paste the full job description here…",
+    cv: "Candidate CV",
+    uploadTitle: "Drop CV here or click to browse",
+    uploadSub: "PDF, DOCX, or TXT — text-based export",
+    position: "Position",
+    level: "Level",
+    model: "AI Model",
+    marketCompare: "Market Compare",
+    selectOrType: "Select or type...",
+    run: "Run Evaluation",
+    running: "Analyzing…",
+    signInNotice: "Please sign in with Google to use the evaluation utility.",
+    evalSummary: "Evaluation Summary",
+    overall: "Overall Score",
+    hireRec: "Hiring Recommendation",
+    confidence: "Confidence",
+    strengthsWeak: "Strengths & Weaknesses",
+    strengths: "Strengths",
+    weaknesses: "Weaknesses",
+    breakdown: "Score Breakdown",
+    jdMatch: "JD Match",
+    cvQuality: "CV Quality",
+    expDepth: "Experience Depth",
+    formatting: "Formatting / ATS",
+    risk: "Risk Indicator",
+    issues: "Issues & Improvements",
+    contentIssues: "Content Issues — bullet rewrites",
+    noContent: "No major content issues detected.",
+    skillGaps: "Skill Gaps",
+    criticalMissing: "Critical Missing",
+    secondaryMissing: "Secondary Missing",
+    transferable: "Transferable",
+    positioning: "Positioning",
+    problem: "Problem",
+    expIssues: "Experience Issues",
+    formatIssues: "Formatting / ATS",
+    redFlags: "Red Flags",
+    noRedFlags: "No red flags detected.",
+    suggestions: "Suggestions",
+    micro: "Micro Fixes",
+    macro: "Macro Fixes",
+    strategic: "Strategic Advice",
+    showJson: "Show Raw JSON",
+    hideJson: "Hide Raw JSON",
+    downloadJson: "Download JSON",
+    analysisDone: "✅ Analysis complete",
+  },
+  vi: {
+    brand: "Đánh Giá CV",
+    signIn: "Đăng nhập Google",
+    logout: "Đăng xuất",
+    heroLabel: "Trợ Lý Tuyển Dụng AI",
+    heroTitle1: "Sàng lọc ứng viên ",
+    heroTitle2: "thông minh hơn",
+    heroTitle3: ", không phải nhanh hơn.",
+    heroSub: "Phân tích CV chuyên nghiệp bằng AI, chấm điểm đa chiều và đưa ra gợi ý cải thiện cụ thể — chỉ trong vài giây.",
+    jd: "Mô Tả Công Việc",
+    jdPlaceholder: "Dán toàn bộ mô tả công việc vào đây…",
+    cv: "CV Ứng Viên",
+    uploadTitle: "Thả CV vào đây hoặc bấm để chọn file",
+    uploadSub: "PDF, DOCX hoặc TXT — bản export dạng text",
+    position: "Vị Trí",
+    level: "Cấp Bậc",
+    model: "Mô Hình AI",
+    marketCompare: "So Sánh Thị Trường",
+    selectOrType: "Chọn hoặc nhập...",
+    run: "Bắt Đầu Đánh Giá",
+    running: "Đang phân tích…",
+    signInNotice: "Vui lòng đăng nhập Google để sử dụng công cụ đánh giá.",
+    evalSummary: "Tổng Quan Đánh Giá",
+    overall: "Điểm Tổng",
+    hireRec: "Đề Xuất Tuyển Dụng",
+    confidence: "Độ tin cậy",
+    strengthsWeak: "Điểm Mạnh & Điểm Yếu",
+    strengths: "Điểm Mạnh",
+    weaknesses: "Điểm Yếu",
+    breakdown: "Chi Tiết Điểm Số",
+    jdMatch: "Khớp JD",
+    cvQuality: "Chất Lượng CV",
+    expDepth: "Độ Sâu Kinh Nghiệm",
+    formatting: "Định Dạng / ATS",
+    risk: "Chỉ Số Rủi Ro",
+    issues: "Vấn Đề & Cải Thiện",
+    contentIssues: "Vấn đề nội dung — viết lại bullet",
+    noContent: "Không phát hiện vấn đề nội dung nghiêm trọng.",
+    skillGaps: "Kỹ Năng Thiếu",
+    criticalMissing: "Thiếu Nghiêm Trọng",
+    secondaryMissing: "Thiếu Phụ",
+    transferable: "Có Thể Chuyển Đổi",
+    positioning: "Định Vị",
+    problem: "Vấn đề",
+    expIssues: "Vấn Đề Kinh Nghiệm",
+    formatIssues: "Định Dạng / ATS",
+    redFlags: "Cờ Đỏ",
+    noRedFlags: "Không phát hiện cờ đỏ nào.",
+    suggestions: "Gợi Ý",
+    micro: "Sửa Nhỏ",
+    macro: "Sửa Lớn",
+    strategic: "Lời Khuyên Chiến Lược",
+    showJson: "Hiện JSON",
+    hideJson: "Ẩn JSON",
+    downloadJson: "Tải JSON",
+    analysisDone: "✅ Phân tích hoàn tất",
+  },
+} as const;
+
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function Accordion({
@@ -129,7 +248,17 @@ export default function Home() {
   const [position, setPosition] = useState("Software Engineer");
   const [level, setLevel] = useState("Junior");
   const [compareMarket, setCompareMarket] = useState(false);
+  const [lang, setLang] = useState<Lang>("en");
+  const t = I18N[lang];
   const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = (typeof window !== "undefined" && localStorage.getItem("cv_lang")) as Lang | null;
+    if (saved === "en" || saved === "vi") setLang(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("cv_lang", lang);
+  }, [lang]);
 
   const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
 
@@ -142,7 +271,7 @@ export default function Home() {
 
   const handleSubmit = useCallback(async () => {
     if (!session) {
-      setError("Please sign in with Google to use the evaluation utility.");
+      setError(t.signInNotice);
       return;
     }
     if (!jdText.trim() || !cvFile) return;
@@ -158,6 +287,7 @@ export default function Home() {
     form.append("position", position);
     form.append("level", level);
     form.append("compare_market", String(compareMarket));
+    form.append("lang", lang);
 
     try {
       const res = await fetch("/api/analyze", { method: "POST", body: form });
@@ -179,7 +309,7 @@ export default function Home() {
           if (ev.type === "progress") addLog(ev.message);
           else if (ev.type === "result") {
             setResult(ev.data);
-            addLog("✅ Analysis complete");
+            addLog(t.analysisDone);
           } else if (ev.type === "error") {
             setError(ev.message);
             addLog(`❌ ${ev.message}`);
@@ -192,7 +322,7 @@ export default function Home() {
     } finally {
       setRunning(false);
     }
-  }, [jdText, cvFile, model, position, level, compareMarket, session]);
+  }, [jdText, cvFile, model, position, level, compareMarket, session, t]);
 
   const ev = result?.evaluation;
   const imp = ev?.improvements;
@@ -207,23 +337,102 @@ export default function Home() {
           <div className="header-inner">
             <div className="header-brand">
               <div className="header-logo">CV</div>
-              <span className="header-title">CV Evaluation</span>
+              <span className="header-title">{t.brand}</span>
             </div>
-            {session && (
-              <div className="header-auth">
-                <div className="user-info">
-                  {session.user?.image && (
-                    <img src={session.user.image} alt="" className="user-avatar" />
-                  )}
-                  <span className="user-name">{session.user?.name}</span>
-                </div>
-                <button className="btn-logout" onClick={() => signOut()}>
-                  Log out
+            <div className="header-auth">
+              <div
+                role="group"
+                aria-label="Language"
+                style={{
+                  position: "relative",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 999,
+                  padding: 3,
+                  marginRight: 12,
+                  width: 132,
+                  height: 34,
+                  cursor: "pointer",
+                  userSelect: "none",
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 3,
+                    left: lang === "en" ? 3 : "calc(50% + 0px)",
+                    width: "calc(50% - 3px)",
+                    height: "calc(100% - 6px)",
+                    background: "#2563eb",
+                    borderRadius: 999,
+                    boxShadow: "0 2px 6px rgba(37,99,235,0.35)",
+                    transition: "left 260ms cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setLang("en")}
+                  style={{
+                    position: "relative",
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    color: lang === "en" ? "#fff" : "#1e293b",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: "4px 0",
+                    transition: "color 200ms",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                  }}
+                  aria-pressed={lang === "en"}
+                >
+                  🇬🇧 ENG
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLang("vi")}
+                  style={{
+                    position: "relative",
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    color: lang === "vi" ? "#fff" : "#1e293b",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: "4px 0",
+                    transition: "color 200ms",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                  }}
+                  aria-pressed={lang === "vi"}
+                >
+                  🇻🇳 VN
                 </button>
               </div>
-            )}
-            {!session && status !== "loading" && (
-              <div className="header-auth">
+              {session && (
+                <>
+                  <div className="user-info">
+                    {session.user?.image && (
+                      <img src={session.user.image} alt="" className="user-avatar" />
+                    )}
+                    <span className="user-name">{session.user?.name}</span>
+                  </div>
+                  <button className="btn-logout" onClick={() => signOut()}>
+                    {t.logout}
+                  </button>
+                </>
+              )}
+              {!session && status !== "loading" && (
                 <button className="btn-google-header" onClick={() => signIn("google")}>
                   <svg viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -231,10 +440,10 @@ export default function Home() {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
-                  <span>Sign in with Google</span>
+                  <span>{t.signIn}</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -249,12 +458,9 @@ export default function Home() {
         {/* Hero */}
         <section className="hero">
           <div className="container">
-            <div className="hero-label">AI Hiring Assistant</div>
-            <h1>Screen candidates <strong>smarter</strong>, not faster.</h1>
-            <p className="hero-sub">
-              Professional AI-powered CV analysis, multi-dimensional scoring, and
-              concrete improvement suggestions — in seconds.
-            </p>
+            <div className="hero-label">{t.heroLabel}</div>
+            <h1>{t.heroTitle1}<strong>{t.heroTitle2}</strong>{t.heroTitle3}</h1>
+            <p className="hero-sub">{t.heroSub}</p>
           </div>
         </section>
 
@@ -262,16 +468,16 @@ export default function Home() {
           {/* Input form */}
           <div className="form-grid">
             <div className="card">
-              <div className="card-label">Job Description</div>
+              <div className="card-label">{t.jd}</div>
               <textarea
-                placeholder="Paste the full job description here…"
+                placeholder={t.jdPlaceholder}
                 value={jdText}
                 onChange={(e) => setJdText(e.target.value)}
               />
             </div>
 
             <div className="card">
-              <div className="card-label">Candidate CV</div>
+              <div className="card-label">{t.cv}</div>
               <label
                 className={`upload-zone${dragging ? " drag-over" : ""}`}
                 onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -290,9 +496,9 @@ export default function Home() {
                 />
                 <div className="upload-icon"><UploadIcon /></div>
                 <div className="upload-title">
-                  {cvFile ? cvFile.name : "Drop CV here or click to browse"}
+                  {cvFile ? cvFile.name : t.uploadTitle}
                 </div>
-                <div className="upload-sub">PDF, DOCX, or TXT — text-based export</div>
+                <div className="upload-sub">{t.uploadSub}</div>
                 {cvFile && (
                   <div className="upload-filename">{(cvFile.size / 1024).toFixed(0)} KB</div>
                 )}
@@ -303,13 +509,13 @@ export default function Home() {
           {/* Context selectors */}
           <div className="config-grid">
             <div className="config-item">
-              <span className="config-label">Position</span>
+              <span className="config-label">{t.position}</span>
               <input
                 type="text"
                 list="positions"
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                placeholder="Select or type..."
+                placeholder={t.selectOrType}
               />
               <datalist id="positions">
                 <option value="Software Engineer" />
@@ -328,13 +534,13 @@ export default function Home() {
             </div>
 
             <div className="config-item">
-              <span className="config-label">Level</span>
+              <span className="config-label">{t.level}</span>
               <input
                 type="text"
                 list="levels"
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
-                placeholder="Select or type..."
+                placeholder={t.selectOrType}
               />
               <datalist id="levels">
                 <option value="Intern / Fresher" />
@@ -347,7 +553,7 @@ export default function Home() {
             </div>
 
             <div className="config-item">
-              <span className="config-label">AI Model</span>
+              <span className="config-label">{t.model}</span>
               <select value={model} onChange={(e) => setModel(e.target.value)}>
                 <optgroup label="Claude (Anthropic)">
                   <option value="claude-opus-4-6">claude-opus-4-6</option>
@@ -373,7 +579,7 @@ export default function Home() {
                   onChange={(e) => setCompareMarket(e.target.checked)}
                 />
                 <span className="toggle-slider"></span>
-                <span className="toggle-text">Market Compare</span>
+                <span className="toggle-text">{t.marketCompare}</span>
               </label>
             </div>
           </div>
@@ -383,7 +589,7 @@ export default function Home() {
             onClick={handleSubmit}
             disabled={running || !jdText.trim() || !cvFile}
           >
-            {running ? "Analyzing…" : "Run Evaluation"}
+            {running ? t.running : t.run}
           </button>
 
           {logs.length > 0 && (
@@ -406,10 +612,10 @@ export default function Home() {
             <div className="results">
               <hr className="divider" />
 
-              <div className="section-heading">Evaluation Summary</div>
+              <div className="section-heading">{t.evalSummary}</div>
               <div className="results-grid-top">
                 <div className="score-card">
-                  <div className="score-label">Overall Score</div>
+                  <div className="score-label">{t.overall}</div>
                   <div className="score-number">
                     {ev.overall_score}<span className="score-denom"> /100</span>
                   </div>
@@ -418,11 +624,11 @@ export default function Home() {
                       {ev.grade}
                     </span>
                   </div>
-                  <div className="score-conf">Confidence: {Math.round(ev.confidence * 100)}%</div>
+                  <div className="score-conf">{t.confidence}: {Math.round(ev.confidence * 100)}%</div>
                 </div>
 
                 <div className="decision-card" style={{ borderLeftColor: recColor(ev.hiring_decision.recommendation) }}>
-                  <div className="decision-label-sm">Hiring Recommendation</div>
+                  <div className="decision-label-sm">{t.hireRec}</div>
                   <div className="decision-value" style={{ color: recColor(ev.hiring_decision.recommendation) }}>
                     {ev.hiring_decision.recommendation}
                   </div>
@@ -433,34 +639,34 @@ export default function Home() {
 
               <hr className="divider" />
 
-              <div className="section-heading">Strengths &amp; Weaknesses</div>
+              <div className="section-heading">{t.strengthsWeak}</div>
               <div className="sw-grid">
                 <div>
-                  <div className="card-label">Strengths</div>
+                  <div className="card-label">{t.strengths}</div>
                   {ev.strengths.map((s, i) => <div key={i} className="list-item">{s}</div>)}
                 </div>
                 <div>
-                  <div className="card-label">Weaknesses</div>
+                  <div className="card-label">{t.weaknesses}</div>
                   {ev.weaknesses.map((w, i) => <div key={i} className="list-item">{w}</div>)}
                 </div>
               </div>
 
               <hr className="divider" />
 
-              <div className="section-heading">Score Breakdown</div>
-              <MetricBar label="JD Match"          value={dim.jd_match}          max={40} />
-              <MetricBar label="CV Quality"         value={dim.cv_quality}         max={25} />
-              <MetricBar label="Experience Depth"   value={dim.experience_depth}   max={10} />
-              <MetricBar label="Formatting / ATS"   value={dim.formatting}         max={15} />
-              <MetricBar label="Risk Indicator"     value={dim.risk}               max={10} />
+              <div className="section-heading">{t.breakdown}</div>
+              <MetricBar label={t.jdMatch}    value={dim.jd_match}        max={40} />
+              <MetricBar label={t.cvQuality}  value={dim.cv_quality}       max={25} />
+              <MetricBar label={t.expDepth}   value={dim.experience_depth} max={10} />
+              <MetricBar label={t.formatting} value={dim.formatting}       max={15} />
+              <MetricBar label={t.risk}       value={dim.risk}             max={10} />
 
               <hr className="divider" />
 
-              <div className="section-heading">Issues &amp; Improvements</div>
+              <div className="section-heading">{t.issues}</div>
 
-              <Accordion title="Content Issues — bullet rewrites" defaultOpen>
+              <Accordion title={t.contentIssues} defaultOpen>
                 {imp.content_issues.length === 0 ? (
-                  <p className="empty-text">No major content issues detected.</p>
+                  <p className="empty-text">{t.noContent}</p>
                 ) : (
                   imp.content_issues.map((issue, i) => (
                     <div key={i} className="issue-card">
@@ -473,45 +679,45 @@ export default function Home() {
                 )}
               </Accordion>
 
-              <Accordion title="Skill Gaps">
+              <Accordion title={t.skillGaps}>
                 <div className="skill-gaps-grid">
                   <div>
-                    <div className="card-label">Critical Missing</div>
+                    <div className="card-label">{t.criticalMissing}</div>
                     {imp.skill_gaps.critical_missing.map((s, i) => <span key={i} className="badge badge-red">{s}</span>)}
                   </div>
                   <div>
-                    <div className="card-label">Secondary Missing</div>
+                    <div className="card-label">{t.secondaryMissing}</div>
                     {imp.skill_gaps.secondary_missing.map((s, i) => <span key={i} className="badge badge-amber">{s}</span>)}
                   </div>
                   <div>
-                    <div className="card-label">Transferable</div>
+                    <div className="card-label">{t.transferable}</div>
                     {imp.skill_gaps.transferable.map((s, i) => <span key={i} className="badge badge-green">{s}</span>)}
                   </div>
                 </div>
               </Accordion>
 
-              <Accordion title="Positioning">
+              <Accordion title={t.positioning}>
                 <div style={{ paddingTop: "0.5rem" }}>
                   {imp.positioning_issues.map((p, i) => (
                     <div key={i} className="pos-block">
-                      <div className="pos-problem">Problem: {p.problem}</div>
+                      <div className="pos-problem">{t.problem}: {p.problem}</div>
                       <div className="pos-rewrite">{p.rewritten_summary}</div>
                     </div>
                   ))}
                 </div>
               </Accordion>
 
-              <Accordion title="Experience Issues">
+              <Accordion title={t.expIssues}>
                 {imp.experience_issues.map((x, i) => <div key={i} className="list-item">{x}</div>)}
               </Accordion>
 
-              <Accordion title="Formatting / ATS">
+              <Accordion title={t.formatIssues}>
                 {imp.formatting_issues.map((x, i) => <div key={i} className="list-item">{x}</div>)}
               </Accordion>
 
-              <Accordion title="Red Flags">
+              <Accordion title={t.redFlags}>
                 {imp.red_flags.length === 0 ? (
-                  <p className="empty-text">No red flags detected.</p>
+                  <p className="empty-text">{t.noRedFlags}</p>
                 ) : (
                   imp.red_flags.map((f, i) => (
                     <div key={i} className="flag-row">
@@ -524,8 +730,8 @@ export default function Home() {
 
               <hr className="divider" />
 
-              <div className="section-heading">Suggestions</div>
-              <Tabs tabs={["Micro Fixes", "Macro Fixes", "Strategic Advice"]}>
+              <div className="section-heading">{t.suggestions}</div>
+              <Tabs tabs={[t.micro, t.macro, t.strategic]}>
                 {(active) => {
                   const lists = [sug.micro_fixes, sug.macro_fixes, sug.strategic_advice];
                   return (
@@ -540,14 +746,14 @@ export default function Home() {
 
               <div className="download-row">
                 <button className="btn-outline" onClick={() => setShowJson((v) => !v)}>
-                  {showJson ? "Hide" : "Show"} Raw JSON
+                  {showJson ? t.hideJson : t.showJson}
                 </button>
                 <a
                   className="btn-outline"
                   href={`data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(result, null, 2))}`}
                   download="cv_evaluation_report.json"
                 >
-                  Download JSON
+                  {t.downloadJson}
                 </a>
               </div>
 

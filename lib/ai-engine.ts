@@ -76,25 +76,44 @@ async function callClaude<T>(model: string, prompt: string, maxTokens = 8000): P
   return parseJSON<T>(text);
 }
 
-async function callLLM<T>(model: string, prompt: string, maxTokens = 8000): Promise<T> {
+export type Lang = "en" | "vi";
+
+function langDirective(lang: Lang): string {
+  if (lang === "vi") {
+    return (
+      "\n\nLANGUAGE REQUIREMENT: Write ALL natural-language string values in the output JSON " +
+      "in Vietnamese (Tiếng Việt). This includes: summary, strengths, weaknesses, reason, " +
+      "problem descriptions, improved_version, rewritten_summary, all suggestion items, " +
+      "red_flag descriptions, and any human-readable text. Keep JSON KEYS, enum values " +
+      "(grade: Strong Hire/Good Fit/Moderate/Weak, recommendation: Hire/Consider/Reject, " +
+      "issue_type), numbers, and technical terms (programming languages, frameworks, tools) " +
+      "in English. Do NOT translate proper nouns.\n"
+    );
+  }
+  return "\n\nLANGUAGE REQUIREMENT: Write all natural-language output in English.\n";
+}
+
+async function callLLM<T>(model: string, prompt: string, lang: Lang, maxTokens = 8000): Promise<T> {
+  const finalPrompt = prompt + langDirective(lang);
   return isGroqModel(model)
-    ? callGroq<T>(model, prompt, maxTokens)
-    : callClaude<T>(model, prompt, maxTokens);
+    ? callGroq<T>(model, finalPrompt, maxTokens)
+    : callClaude<T>(model, finalPrompt, maxTokens);
 }
 
-export async function extractJD(model: string, jdText: string): Promise<JDUnderstanding> {
-  return callLLM<JDUnderstanding>(model, JD_EXTRACTION_PROMPT(jdText));
+export async function extractJD(model: string, jdText: string, lang: Lang = "en"): Promise<JDUnderstanding> {
+  return callLLM<JDUnderstanding>(model, JD_EXTRACTION_PROMPT(jdText), lang);
 }
 
-export async function extractCV(model: string, cvText: string): Promise<CVUnderstanding> {
-  return callLLM<CVUnderstanding>(model, CV_EXTRACTION_PROMPT(cvText));
+export async function extractCV(model: string, cvText: string, lang: Lang = "en"): Promise<CVUnderstanding> {
+  return callLLM<CVUnderstanding>(model, CV_EXTRACTION_PROMPT(cvText), lang);
 }
 
 export async function evaluate(
   model: string,
   jdJson: JDUnderstanding,
   cvJson: CVUnderstanding,
-  cvRaw: string
+  cvRaw: string,
+  lang: Lang = "en"
 ): Promise<Evaluation> {
   const ev = await callLLM<Evaluation>(
     model,
@@ -103,7 +122,8 @@ export async function evaluate(
       JSON.stringify(cvJson, null, 2),
       cvRaw
     ),
-    isGroqModel(model) ? 8000 : 16000 // Groq caps at 8k output
+    lang,
+    isGroqModel(model) ? 8000 : 16000
   );
   return normalizeEvaluation(ev);
 }
@@ -112,21 +132,22 @@ export async function screenCandidate(
   jdText: string,
   cvText: string,
   model: string,
-  onProgress: (msg: string) => void
+  onProgress: (msg: string) => void,
+  lang: Lang = "en"
 ): Promise<ScreeningResult> {
   const provider = isGroqModel(model) ? "Groq" : "Claude";
   onProgress(`🔌 Connecting to ${provider} (${model})…`);
 
   onProgress("📋 Step 1/3 — Reading Job Description…");
-  const jd = await extractJD(model, jdText);
+  const jd = await extractJD(model, jdText, lang);
   onProgress(`   ✓ JD parsed — ${jd.role_title} · ${jd.seniority_level}`);
 
   onProgress("📄 Step 2/3 — Parsing CV…");
-  const cv = await extractCV(model, cvText);
+  const cv = await extractCV(model, cvText, lang);
   onProgress(`   ✓ CV parsed — ${cv.candidate_name} · ${cv.career_trajectory.slice(0, 60)}`);
 
   onProgress("🧠 Step 3/3 — Senior panel evaluating…");
-  const evaluation = await evaluate(model, jd, cv, cvText);
+  const evaluation = await evaluate(model, jd, cv, cvText, lang);
   onProgress(
     `   ✓ Done — ${evaluation.overall_score}/100 · ${evaluation.grade} · ${evaluation.hiring_decision.recommendation}`
   );
