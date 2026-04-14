@@ -280,13 +280,12 @@ export default function Home() {
                   <option value="claude-haiku-4-5">claude-haiku-4-5</option>
                 </optgroup>
                 <optgroup label="Llama (Groq)">
-                  <option value="llama-3.1-70b-versatile">llama-3.1-70b-versatile</option>
+                  <option value="llama-3.3-70b-versatile">llama-3.1-70b-versatile</option>
                   <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
-                  <option value="llama3-70b-8192">llama3-70b-8192</option>
                 </optgroup>
-                <optgroup label="Other (Groq)">
-                  <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-                  <option value="gemma2-9b-it">gemma2-9b-it</option>
+                <optgroup label="GPT OSS (Groq)">
+                  <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+                  <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
                 </optgroup>
               </select>
               <span className={`model-badge ${isGroq ? "groq" : "anthropic"}`}>
