@@ -56,7 +56,7 @@ export interface SubmitTraceRow {
   model: string;
   jdSnippet: string;   // first 300 chars
   cvFilename: string;
-  cvDriveUrl: string;
+  cvUrl: string;
   score: number;
   grade: string;
   recommendation: string;
@@ -82,7 +82,7 @@ export async function appendSubmitTrace(row: SubmitTraceRow) {
         row.model,
         row.jdSnippet,
         row.cvFilename,
-        row.cvDriveUrl,
+        row.cvUrl,
         row.score,
         row.grade,
         row.recommendation,
