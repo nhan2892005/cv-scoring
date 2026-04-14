@@ -1,8 +1,6 @@
-"""AI pipeline on Claude API: JD understanding -> CV understanding -> Evaluation.
+"""AI pipeline on Claude/Groq API: JD understanding -> CV understanding -> Evaluation.
 
-Uses the Anthropic SDK with Claude Sonnet 4.6. Every stage returns strict JSON;
-we stream to avoid HTTP timeouts on long outputs. A `progress` callback lets the
-UI log each pipeline step as it happens.
+Supports Anthropic (Claude) and Groq (Llama) models.
 """
 from __future__ import annotations
 
@@ -12,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 import anthropic
+import groq
 
 ProgressFn = Callable[[str], None]
 
@@ -21,7 +20,7 @@ from prompts import (
     JD_EXTRACTION_PROMPT,
 )
 
-DEFAULT_MODEL = os.getenv("CV_SCORING_MODEL", "claude-sonnet-4-6")
+DEFAULT_MODEL = os.getenv("CV_SCORING_MODEL", "llama-3.3-70b-versatile")
 
 SYSTEM_PROMPT = (
     "You are a panel of senior hiring experts: a Senior Hiring Manager (10+ yrs), "
@@ -38,39 +37,65 @@ class ScreeningResult:
     evaluation: dict[str, Any]
 
 
-def _client(api_key: str | None = None) -> anthropic.Anthropic:
-    key = api_key or os.getenv("ANTHROPIC_API_KEY")
-    if not key:
-        raise RuntimeError(
-            "ANTHROPIC_API_KEY not set. Put it in .env or pass it via the sidebar."
-        )
-    return anthropic.Anthropic(api_key=key)
-
-
 def _chat_json(
-    client: anthropic.Anthropic,
+    api_key: str | None,
     model: str,
     user_prompt: str,
     max_tokens: int = 16000,
     progress: ProgressFn | None = None,
 ) -> dict:
-    """Stream a Claude request and parse the full JSON response."""
-    with client.messages.stream(
-        model=model,
-        max_tokens=max_tokens,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    ) as stream:
-        message = stream.get_final_message()
+    """Stream a request (Anthropic or Groq) and parse the full JSON response."""
+    is_groq = "llama" in model.lower() or "mixtral" in model.lower() or "gemma" in model.lower()
 
-    text = "".join(b.text for b in message.content if b.type == "text").strip()
-    if progress:
-        usage = getattr(message, "usage", None)
-        if usage is not None:
-            progress(
-                f"   ↳ tokens: in {usage.input_tokens}, out {usage.output_tokens}"
-            )
-    return _parse_json(text)
+    if is_groq:
+        key = api_key or os.getenv("GROQ_API_KEY")
+        if not key:
+            raise RuntimeError("GROQ_API_KEY not set. Put it in .env or pass it via UI.")
+        
+        client = groq.Groq(api_key=key)
+        safe_max_tokens = min(max_tokens, 8000) # Giới hạn max output của Groq
+        
+        stream = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            max_tokens=safe_max_tokens,
+            temperature=0.0,
+            stream=True
+        )
+        
+        text_chunks = []
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                text_chunks.append(chunk.choices[0].delta.content)
+                
+        text = "".join(text_chunks).strip()
+        if progress:
+            progress("   ↳ (Groq stream completed fast)")
+        return _parse_json(text)
+
+    else:
+        key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        if not key:
+            raise RuntimeError("ANTHROPIC_API_KEY not set. Put it in .env or pass it via UI.")
+        
+        client = anthropic.Anthropic(api_key=key)
+        with client.messages.stream(
+            model=model,
+            max_tokens=max_tokens,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_prompt}],
+        ) as stream:
+            message = stream.get_final_message()
+
+        text = "".join(b.text for b in message.content if b.type == "text").strip()
+        if progress:
+            usage = getattr(message, "usage", None)
+            if usage is not None:
+                progress(f"   ↳ tokens: in {usage.input_tokens}, out {usage.output_tokens}")
+        return _parse_json(text)
 
 
 def _parse_json(text: str) -> dict:
@@ -90,27 +115,27 @@ def _parse_json(text: str) -> dict:
 
 
 def extract_jd(
-    client: anthropic.Anthropic,
+    api_key: str | None,
     jd_text: str,
     model: str = DEFAULT_MODEL,
     progress: ProgressFn | None = None,
 ) -> dict:
     prompt = JD_EXTRACTION_PROMPT.replace("{jd}", jd_text)
-    return _chat_json(client, model, prompt, progress=progress)
+    return _chat_json(api_key, model, prompt, progress=progress)
 
 
 def extract_cv(
-    client: anthropic.Anthropic,
+    api_key: str | None,
     cv_text: str,
     model: str = DEFAULT_MODEL,
     progress: ProgressFn | None = None,
 ) -> dict:
     prompt = CV_EXTRACTION_PROMPT.replace("{cv}", cv_text)
-    return _chat_json(client, model, prompt, progress=progress)
+    return _chat_json(api_key, model, prompt, progress=progress)
 
 
 def evaluate(
-    client: anthropic.Anthropic,
+    api_key: str | None,
     jd_json: dict,
     cv_json: dict,
     cv_raw: str,
@@ -122,7 +147,7 @@ def evaluate(
         cv_json=json.dumps(cv_json, ensure_ascii=False, indent=2),
         cv_raw=cv_raw[:8000],
     )
-    result = _chat_json(client, model, prompt, max_tokens=16000, progress=progress)
+    result = _chat_json(api_key, model, prompt, max_tokens=16000, progress=progress)
     return _normalize_evaluation(result)
 
 
@@ -137,22 +162,22 @@ def screen_candidate(
         if progress:
             progress(msg)
 
-    log(f"🔌 Connecting to Claude ({model})...")
-    client = _client(api_key)
+    provider = "Groq" if ("llama" in model.lower() or "mixtral" in model.lower()) else "Claude"
+    log(f"🔌 Connecting to {provider} ({model})...")
 
     log("📋 Step 1/3 — Reading Job Description (extracting required skills, seniority, hidden expectations)")
-    jd_json = extract_jd(client, jd_text, model=model, progress=progress)
+    jd_json = extract_jd(api_key, jd_text, model=model, progress=progress)
     log(f"   ✓ JD parsed — role: {jd_json.get('role_title','?')} · seniority: {jd_json.get('seniority_level','?')}")
 
     log("📄 Step 2/3 — Reading CV (extracting profile, trajectory, bullets, red-flag signals)")
-    cv_json = extract_cv(client, cv_text, model=model, progress=progress)
+    cv_json = extract_cv(api_key, cv_text, model=model, progress=progress)
     log(
         f"   ✓ CV parsed — candidate: {cv_json.get('candidate_name','?')} · "
         f"trajectory: {cv_json.get('career_trajectory','?')[:60]}"
     )
 
     log("🧠 Step 3/3 — Senior panel evaluating (scoring, rewrites, hiring decision)")
-    evaluation = evaluate(client, jd_json, cv_json, cv_text, model=model, progress=progress)
+    evaluation = evaluate(api_key, jd_json, cv_json, cv_text, model=model, progress=progress)
     log(
         f"   ✓ Evaluation done — score: {evaluation.get('overall_score','?')}/100 · "
         f"grade: {evaluation.get('grade','?')} · "
