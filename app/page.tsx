@@ -172,7 +172,7 @@ export default function Home() {
           <div className="header-inner">
             <div className="header-dot" />
             <span className="header-title">CV Evaluation</span>
-            <span className="header-tag">Powered by Claude</span>
+            <span className="header-tag">Powered by BaoVo</span>
           </div>
         </div>
       </header>
@@ -257,7 +257,7 @@ export default function Home() {
                   <option value="claude-haiku-4-5">claude-haiku-4-5</option>
                 </optgroup>
                 <optgroup label="Llama (Groq)">
-                  <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+                  <option value="llama-3.2-70b-versatile">llama-3.2-70b-versatile</option>
                   <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
                   <option value="llama3-70b-8192">llama3-70b-8192</option>
                 </optgroup>

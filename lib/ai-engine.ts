@@ -1,5 +1,5 @@
 // lib/ai-engine.ts  — server-side only
-import Anthropic from "anthropic";
+import Anthropic from "@anthropic-ai/sdk";
 import Groq from "groq-sdk";
 import {
   Evaluation,
@@ -17,7 +17,7 @@ import {
 export const DEFAULT_MODEL = process.env.CV_SCORING_MODEL ?? "claude-sonnet-4-6";
 
 export function isGroqModel(model: string) {
-  return ["llama", "mixtral", "gemma"].some((k) => model.toLowerCase().includes(k));
+  return ["llama", "mixtral", "gemma", "tên-model-khác"].some((k) => model.toLowerCase().includes(k));
 }
 
 function parseJSON<T>(raw: string): T {
