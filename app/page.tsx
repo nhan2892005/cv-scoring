@@ -124,6 +124,9 @@ export default function Home() {
   const [result, setResult] = useState<ScreeningResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const [position, setPosition] = useState("Software Engineer");
+  const [level, setLevel] = useState("Junior");
+  const [compareMarket, setCompareMarket] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
@@ -146,6 +149,9 @@ export default function Home() {
     form.append("jd_text", jdText);
     form.append("cv_file", cvFile);
     form.append("model", model);
+    form.append("position", position);
+    form.append("level", level);
+    form.append("compare_market", String(compareMarket));
 
     try {
       const res = await fetch("/api/analyze", { method: "POST", body: form });
@@ -266,6 +272,57 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Context selectors */}
+          <div className="config-grid">
+            <div className="config-item">
+              <span className="config-label">Position</span>
+              <select
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+              >
+                <option value="Software Engineer">Software Engineer</option>
+                <option value="Frontend Developer">Frontend Developer</option>
+                <option value="Backend Developer">Backend Developer</option>
+                <option value="Fullstack Developer">Fullstack Developer</option>
+                <option value="Mobile Developer">Mobile Developer</option>
+                <option value="DevOps Engineer">DevOps Engineer</option>
+                <option value="Data Scientist">Data Scientist</option>
+                <option value="AI/ML Engineer">AI/ML Engineer</option>
+                <option value="Product Manager">Product Manager</option>
+                <option value="Project Manager">Project Manager</option>
+                <option value="QA/Tester">QA/Tester</option>
+                <option value="UI/UX Designer">UI/UX Designer</option>
+              </select>
+            </div>
+
+            <div className="config-item">
+              <span className="config-label">Level</span>
+              <select
+                value={level}
+                onChange={(e) => setLevel(e.target.value)}
+              >
+                <option value="Intern">Intern / Fresher</option>
+                <option value="Junior">Junior</option>
+                <option value="Middle">Middle / Specialist</option>
+                <option value="Senior">Senior</option>
+                <option value="Lead">Lead / Staff</option>
+                <option value="Manager">Manager / Director</option>
+              </select>
+            </div>
+
+            <div className="config-item flex-center">
+              <label className="toggle-btn">
+                <input
+                  type="checkbox"
+                  checked={compareMarket}
+                  onChange={(e) => setCompareMarket(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-text">So sánh với thị trường</span>
+              </label>
+            </div>
+          </div>
+
           {/* Model selector */}
           <div className="model-selector-row">
             <div className="model-selector">
@@ -280,13 +337,12 @@ export default function Home() {
                   <option value="claude-haiku-4-5">claude-haiku-4-5</option>
                 </optgroup>
                 <optgroup label="Llama (Groq)">
-                  <option value="llama-3.1-70b-versatile">llama-3.1-70b-versatile</option>
+                  <option value="llama-3.3-70b-versatile">llama-3.1-70b-versatile</option>
                   <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
-                  <option value="llama3-70b-8192">llama3-70b-8192</option>
                 </optgroup>
-                <optgroup label="Other (Groq)">
-                  <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-                  <option value="gemma2-9b-it">gemma2-9b-it</option>
+                <optgroup label="GPT OSS (Groq)">
+                  <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+                  <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
                 </optgroup>
               </select>
               <span className={`model-badge ${isGroq ? "groq" : "anthropic"}`}>
