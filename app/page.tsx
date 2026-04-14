@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { ScreeningResult, ProgressEvent } from "@/lib/types";
 
@@ -131,6 +131,16 @@ export default function Home() {
   const [compareMarket, setCompareMarket] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
+  // ── Login Tracking ──────────────────────────────────────────────────────────
+  // Fires once per browser session when the user becomes authenticated
+  const loginTracked = useRef(false);
+  useEffect(() => {
+    if (session?.user?.email && !loginTracked.current) {
+      loginTracked.current = true;
+      fetch("/api/track/login", { method: "POST" }).catch(console.error);
+    }
+  }, [session?.user?.email]);
+
   const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
 
   function addLog(msg: string) {
@@ -192,7 +202,7 @@ export default function Home() {
     } finally {
       setRunning(false);
     }
-  }, [jdText, cvFile, model, session]);
+  }, [jdText, cvFile, model, position, level, compareMarket, session]);
 
   const ev = result?.evaluation;
   const imp = ev?.improvements;
@@ -213,11 +223,7 @@ export default function Home() {
               <div className="header-auth">
                 <div className="user-info">
                   {session.user?.image && (
-                    <img
-                      src={session.user.image}
-                      alt=""
-                      className="user-avatar"
-                    />
+                    <img src={session.user.image} alt="" className="user-avatar" />
                   )}
                   <span className="user-name">{session.user?.name}</span>
                 </div>
@@ -230,22 +236,10 @@ export default function Home() {
               <div className="header-auth">
                 <button className="btn-google-header" onClick={() => signIn("google")}>
                   <svg viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   <span>Sign in with Google</span>
                 </button>
@@ -277,7 +271,6 @@ export default function Home() {
         <div className="container">
           {/* Input form */}
           <div className="form-grid">
-            {/* JD */}
             <div className="card">
               <div className="card-label">Job Description</div>
               <textarea
@@ -287,15 +280,11 @@ export default function Home() {
               />
             </div>
 
-            {/* CV upload */}
             <div className="card">
               <div className="card-label">Candidate CV</div>
               <label
                 className={`upload-zone${dragging ? " drag-over" : ""}`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(true);
-                }}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -309,17 +298,13 @@ export default function Home() {
                   accept=".pdf,.docx,.txt"
                   onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
                 />
-                <div className="upload-icon">
-                  <UploadIcon />
-                </div>
+                <div className="upload-icon"><UploadIcon /></div>
                 <div className="upload-title">
                   {cvFile ? cvFile.name : "Drop CV here or click to browse"}
                 </div>
                 <div className="upload-sub">PDF, DOCX, or TXT — text-based export</div>
                 {cvFile && (
-                  <div className="upload-filename">
-                    {(cvFile.size / 1024).toFixed(0)} KB
-                  </div>
+                  <div className="upload-filename">{(cvFile.size / 1024).toFixed(0)} KB</div>
                 )}
               </label>
             </div>
@@ -329,46 +314,51 @@ export default function Home() {
           <div className="config-grid">
             <div className="config-item">
               <span className="config-label">Position</span>
-              <select
+              <input
+                type="text"
+                list="positions"
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-              >
-                <option value="Software Engineer">Software Engineer</option>
-                <option value="Frontend Developer">Frontend Developer</option>
-                <option value="Backend Developer">Backend Developer</option>
-                <option value="Fullstack Developer">Fullstack Developer</option>
-                <option value="Mobile Developer">Mobile Developer</option>
-                <option value="DevOps Engineer">DevOps Engineer</option>
-                <option value="Data Scientist">Data Scientist</option>
-                <option value="AI/ML Engineer">AI/ML Engineer</option>
-                <option value="Product Manager">Product Manager</option>
-                <option value="Project Manager">Project Manager</option>
-                <option value="QA/Tester">QA/Tester</option>
-                <option value="UI/UX Designer">UI/UX Designer</option>
-              </select>
+                placeholder="Select or type..."
+              />
+              <datalist id="positions">
+                <option value="Software Engineer" />
+                <option value="Frontend Developer" />
+                <option value="Backend Developer" />
+                <option value="Fullstack Developer" />
+                <option value="Mobile Developer" />
+                <option value="DevOps Engineer" />
+                <option value="Data Scientist" />
+                <option value="AI/ML Engineer" />
+                <option value="Product Manager" />
+                <option value="Project Manager" />
+                <option value="QA/Tester" />
+                <option value="UI/UX Designer" />
+              </datalist>
             </div>
 
             <div className="config-item">
               <span className="config-label">Level</span>
-              <select
+              <input
+                type="text"
+                list="levels"
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
-              >
-                <option value="Intern">Intern / Fresher</option>
-                <option value="Junior">Junior</option>
-                <option value="Middle">Middle / Specialist</option>
-                <option value="Senior">Senior</option>
-                <option value="Lead">Lead / Staff</option>
-                <option value="Manager">Manager / Director</option>
-              </select>
+                placeholder="Select or type..."
+              />
+              <datalist id="levels">
+                <option value="Intern / Fresher" />
+                <option value="Junior" />
+                <option value="Middle / Specialist" />
+                <option value="Senior" />
+                <option value="Lead / Staff" />
+                <option value="Manager / Director" />
+              </datalist>
             </div>
 
             <div className="config-item">
               <span className="config-label">AI Model</span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-              >
+              <select value={model} onChange={(e) => setModel(e.target.value)}>
                 <optgroup label="Claude (Anthropic)">
                   <option value="claude-opus-4-6">claude-opus-4-6</option>
                   <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
@@ -406,7 +396,6 @@ export default function Home() {
             {running ? "Analyzing…" : "Run Evaluation"}
           </button>
 
-          {/* Progress log */}
           {logs.length > 0 && (
             <div className="log-box" ref={logRef}>
               {logs.map((l, i) => (
@@ -414,8 +403,7 @@ export default function Home() {
                   key={i}
                   className={`log-line${l.startsWith("✅") ? " success" : l.startsWith("❌") ? " error" : ""}`}
                 >
-                  {l}
-                  {"\n"}
+                  {l}{"\n"}
                 </span>
               ))}
             </div>
@@ -428,94 +416,61 @@ export default function Home() {
             <div className="results">
               <hr className="divider" />
 
-              {/* ① Score + Decision */}
               <div className="section-heading">Evaluation Summary</div>
               <div className="results-grid-top">
                 <div className="score-card">
                   <div className="score-label">Overall Score</div>
                   <div className="score-number">
-                    {ev.overall_score}
-                    <span className="score-denom"> /100</span>
+                    {ev.overall_score}<span className="score-denom"> /100</span>
                   </div>
                   <div>
-                    <span
-                      className="grade-pill"
-                      style={{
-                        background: gradeColor(ev.grade),
-                        color: "#fff",
-                      }}
-                    >
+                    <span className="grade-pill" style={{ background: gradeColor(ev.grade), color: "#fff" }}>
                       {ev.grade}
                     </span>
                   </div>
-                  <div className="score-conf">
-                    Confidence: {Math.round(ev.confidence * 100)}%
-                  </div>
+                  <div className="score-conf">Confidence: {Math.round(ev.confidence * 100)}%</div>
                 </div>
 
-                <div
-                  className="decision-card"
-                  style={{
-                    borderLeftColor: recColor(ev.hiring_decision.recommendation),
-                  }}
-                >
+                <div className="decision-card" style={{ borderLeftColor: recColor(ev.hiring_decision.recommendation) }}>
                   <div className="decision-label-sm">Hiring Recommendation</div>
-                  <div
-                    className="decision-value"
-                    style={{ color: recColor(ev.hiring_decision.recommendation) }}
-                  >
+                  <div className="decision-value" style={{ color: recColor(ev.hiring_decision.recommendation) }}>
                     {ev.hiring_decision.recommendation}
                   </div>
-                  <div className="decision-reason">
-                    {ev.hiring_decision.reason}
-                  </div>
+                  <div className="decision-reason">{ev.hiring_decision.reason}</div>
                   <div className="decision-summary">{ev.summary}</div>
                 </div>
               </div>
 
               <hr className="divider" />
 
-              {/* ② Strengths / Weaknesses */}
               <div className="section-heading">Strengths &amp; Weaknesses</div>
               <div className="sw-grid">
                 <div>
                   <div className="card-label">Strengths</div>
-                  {ev.strengths.map((s, i) => (
-                    <div key={i} className="list-item">
-                      {s}
-                    </div>
-                  ))}
+                  {ev.strengths.map((s, i) => <div key={i} className="list-item">{s}</div>)}
                 </div>
                 <div>
                   <div className="card-label">Weaknesses</div>
-                  {ev.weaknesses.map((w, i) => (
-                    <div key={i} className="list-item">
-                      {w}
-                    </div>
-                  ))}
+                  {ev.weaknesses.map((w, i) => <div key={i} className="list-item">{w}</div>)}
                 </div>
               </div>
 
               <hr className="divider" />
 
-              {/* ③ Score Breakdown */}
               <div className="section-heading">Score Breakdown</div>
-              <MetricBar label="JD Match" value={dim.jd_match} max={40} />
-              <MetricBar label="CV Quality" value={dim.cv_quality} max={25} />
-              <MetricBar label="Experience Depth" value={dim.experience_depth} max={10} />
-              <MetricBar label="Formatting / ATS" value={dim.formatting} max={15} />
-              <MetricBar label="Risk Indicator" value={dim.risk} max={10} />
+              <MetricBar label="JD Match"          value={dim.jd_match}          max={40} />
+              <MetricBar label="CV Quality"         value={dim.cv_quality}         max={25} />
+              <MetricBar label="Experience Depth"   value={dim.experience_depth}   max={10} />
+              <MetricBar label="Formatting / ATS"   value={dim.formatting}         max={15} />
+              <MetricBar label="Risk Indicator"     value={dim.risk}               max={10} />
 
               <hr className="divider" />
 
-              {/* ④ Issues */}
               <div className="section-heading">Issues &amp; Improvements</div>
 
               <Accordion title="Content Issues — bullet rewrites" defaultOpen>
                 {imp.content_issues.length === 0 ? (
-                  <p className="empty-text">
-                    No major content issues detected.
-                  </p>
+                  <p className="empty-text">No major content issues detected.</p>
                 ) : (
                   imp.content_issues.map((issue, i) => (
                     <div key={i} className="issue-card">
@@ -532,21 +487,15 @@ export default function Home() {
                 <div className="skill-gaps-grid">
                   <div>
                     <div className="card-label">Critical Missing</div>
-                    {imp.skill_gaps.critical_missing.map((s, i) => (
-                      <span key={i} className="badge badge-red">{s}</span>
-                    ))}
+                    {imp.skill_gaps.critical_missing.map((s, i) => <span key={i} className="badge badge-red">{s}</span>)}
                   </div>
                   <div>
                     <div className="card-label">Secondary Missing</div>
-                    {imp.skill_gaps.secondary_missing.map((s, i) => (
-                      <span key={i} className="badge badge-amber">{s}</span>
-                    ))}
+                    {imp.skill_gaps.secondary_missing.map((s, i) => <span key={i} className="badge badge-amber">{s}</span>)}
                   </div>
                   <div>
                     <div className="card-label">Transferable</div>
-                    {imp.skill_gaps.transferable.map((s, i) => (
-                      <span key={i} className="badge badge-green">{s}</span>
-                    ))}
+                    {imp.skill_gaps.transferable.map((s, i) => <span key={i} className="badge badge-green">{s}</span>)}
                   </div>
                 </div>
               </Accordion>
@@ -563,26 +512,16 @@ export default function Home() {
               </Accordion>
 
               <Accordion title="Experience Issues">
-                {imp.experience_issues.map((x, i) => (
-                  <div key={i} className="list-item">
-                    {x}
-                  </div>
-                ))}
+                {imp.experience_issues.map((x, i) => <div key={i} className="list-item">{x}</div>)}
               </Accordion>
 
               <Accordion title="Formatting / ATS">
-                {imp.formatting_issues.map((x, i) => (
-                  <div key={i} className="list-item">
-                    {x}
-                  </div>
-                ))}
+                {imp.formatting_issues.map((x, i) => <div key={i} className="list-item">{x}</div>)}
               </Accordion>
 
               <Accordion title="Red Flags">
                 {imp.red_flags.length === 0 ? (
-                  <p className="empty-text">
-                    No red flags detected.
-                  </p>
+                  <p className="empty-text">No red flags detected.</p>
                 ) : (
                   imp.red_flags.map((f, i) => (
                     <div key={i} className="flag-row">
@@ -595,18 +534,13 @@ export default function Home() {
 
               <hr className="divider" />
 
-              {/* ⑤ Suggestions */}
               <div className="section-heading">Suggestions</div>
               <Tabs tabs={["Micro Fixes", "Macro Fixes", "Strategic Advice"]}>
                 {(active) => {
                   const lists = [sug.micro_fixes, sug.macro_fixes, sug.strategic_advice];
                   return (
                     <div>
-                      {lists[active].map((s, i) => (
-                        <div key={i} className="list-item">
-                          {s}
-                        </div>
-                      ))}
+                      {lists[active].map((s, i) => <div key={i} className="list-item">{s}</div>)}
                     </div>
                   );
                 }}
@@ -614,16 +548,13 @@ export default function Home() {
 
               <hr className="divider" />
 
-              {/* ⑥ Download / Raw JSON */}
               <div className="download-row">
                 <button className="btn-outline" onClick={() => setShowJson((v) => !v)}>
                   {showJson ? "Hide" : "Show"} Raw JSON
                 </button>
                 <a
                   className="btn-outline"
-                  href={`data:application/json;charset=utf-8,${encodeURIComponent(
-                    JSON.stringify(result, null, 2)
-                  )}`}
+                  href={`data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(result, null, 2))}`}
                   download="cv_evaluation_report.json"
                 >
                   Download JSON

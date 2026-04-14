@@ -17,7 +17,7 @@ import {
 export const DEFAULT_MODEL = process.env.CV_SCORING_MODEL ?? "claude-sonnet-4-6";
 
 export function isGroqModel(model: string) {
-  return ["llama", "mixtral", "gemma", "tên-model-khác"].some((k) => model.toLowerCase().includes(k));
+  return ["llama", "mixtral", "gemma", "openai/gpt-oss"].some((k) => model.toLowerCase().includes(k));
 }
 
 function parseJSON<T>(raw: string): T {
@@ -56,6 +56,7 @@ async function callGroq<T>(model: string, prompt: string, maxTokens = 8000): Pro
 }
 
 async function callClaude<T>(model: string, prompt: string, maxTokens = 8000): Promise<T> {
+  model = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-6";
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set in .env.local");
 

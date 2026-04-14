@@ -1,11 +1,22 @@
-// app/api/analyze/route.ts
 import { NextRequest } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { parseCVBuffer } from "@/lib/cv-parser";
 import { screenCandidate, isGroqModel, DEFAULT_MODEL } from "@/lib/ai-engine";
 import { ProgressEvent } from "@/lib/types";
+import { uploadCVToDrive } from "@/lib/google-drive";
+import { appendSubmitTrace } from "@/lib/google-sheets";
 
 export const runtime = "nodejs";
-export const maxDuration = 120; // 2 min timeout for Vercel Pro / self-hosted
+export const maxDuration = 120;
+
+function extractIP(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
@@ -19,10 +30,19 @@ export async function POST(req: NextRequest) {
       }
 
       try {
+        // ── Auth ──────────────────────────────────────────────────────────
+        const session = await getServerSession(authOptions);
+        const userEmail = session?.user?.email ?? "anonymous";
+        const userName  = session?.user?.name  ?? "anonymous";
+        const ip        = extractIP(req);
+
+        // ── Form data ─────────────────────────────────────────────────────
         const formData = await req.formData();
-        const jdText = formData.get("jd_text") as string | null;
-        const cvFile = formData.get("cv_file") as File | null;
-        const model = (formData.get("model") as string | null) ?? DEFAULT_MODEL;
+        const jdText  = formData.get("jd_text")  as string | null;
+        const cvFile  = formData.get("cv_file")  as File   | null;
+        const model   = (formData.get("model")   as string | null) ?? DEFAULT_MODEL;
+        const position = (formData.get("position") as string | null) ?? "";
+        const level    = (formData.get("level")    as string | null) ?? "";
 
         if (!jdText?.trim()) {
           send({ type: "error", message: "Job Description is required." });
@@ -47,29 +67,55 @@ export async function POST(req: NextRequest) {
           return;
         }
 
+        // ── Parse CV buffer ───────────────────────────────────────────────
         send({ type: "progress", message: `📂 Parsing CV (${cvFile.name})…` });
-
-        const bytes = await cvFile.arrayBuffer();
+        const bytes  = await cvFile.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const cvText = await parseCVBuffer(buffer, cvFile.name);
 
         if (cvText.length < 80) {
-          send({
-            type: "progress",
-            message: "⚠️  CV looks very short — scanned PDF? Text may be limited.",
-          });
+          send({ type: "progress", message: "⚠️  CV looks very short — scanned PDF? Text may be limited." });
+        }
+        send({ type: "progress", message: `   ✓ CV parsed — ${cvText.length.toLocaleString()} characters` });
+
+        // ── Upload CV to Google Drive (non-blocking for user) ─────────────
+        let cvDriveUrl = "";
+        if (process.env.GOOGLE_DRIVE_FOLDER_ID && process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+          try {
+            const uploaded = await uploadCVToDrive(buffer, cvFile.name, userEmail);
+            cvDriveUrl = uploaded.webViewLink;
+          } catch (driveErr) {
+            console.error("[drive-upload] error:", driveErr);
+          }
         }
 
-        send({
-          type: "progress",
-          message: `   ✓ CV parsed — ${cvText.length.toLocaleString()} characters`,
-        });
-
+        // ── AI analysis ───────────────────────────────────────────────────
         const result = await screenCandidate(jdText, cvText, model, (msg) => {
           send({ type: "progress", message: msg });
         });
 
         send({ type: "result", data: result });
+
+        // ── Log to Submit Trace (fire-and-forget) ─────────────────────────
+        if (process.env.GOOGLE_SHEET_ID && process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+          appendSubmitTrace({
+            email:          userEmail,
+            name:           userName,
+            ip,
+            position,
+            level,
+            model,
+            jdSnippet:      jdText.slice(0, 300).replace(/\n/g, " "),
+            cvFilename:     cvFile.name,
+            cvDriveUrl,
+            score:          result.evaluation.overall_score,
+            grade:          result.evaluation.grade,
+            recommendation: result.evaluation.hiring_decision.recommendation,
+            confidence:     result.evaluation.confidence,
+            summary:        result.evaluation.summary.slice(0, 200),
+          }).catch((err) => console.error("[submit-trace] sheets error:", err));
+        }
+
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         send({ type: "error", message: msg });
