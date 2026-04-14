@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { parseCVBuffer } from "@/lib/cv-parser";
 import { screenCandidate, isGroqModel, DEFAULT_MODEL } from "@/lib/ai-engine";
 import { ProgressEvent } from "@/lib/types";
-import { uploadCVToDrive } from "@/lib/google-drive";
+import { uploadCVToCloudinary } from "@/lib/cloudinary";
 import { appendSubmitTrace } from "@/lib/google-sheets";
 
 export const runtime = "nodejs";
@@ -78,14 +78,14 @@ export async function POST(req: NextRequest) {
         }
         send({ type: "progress", message: `   ✓ CV parsed — ${cvText.length.toLocaleString()} characters` });
 
-        // ── Upload CV to Google Drive (non-blocking for user) ─────────────
-        let cvDriveUrl = "";
-        if (process.env.GOOGLE_DRIVE_FOLDER_ID && process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
+        // ── Upload CV to Cloudinary (non-blocking for user) ───────────────
+        let cvUrl = "";
+        if (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
           try {
-            const uploaded = await uploadCVToDrive(buffer, cvFile.name, userEmail);
-            cvDriveUrl = uploaded.webViewLink;
-          } catch (driveErr) {
-            console.error("[drive-upload] error:", driveErr);
+            const uploaded = await uploadCVToCloudinary(buffer, cvFile.name, userEmail);
+            cvUrl = uploaded.secure_url;
+          } catch (cloudErr) {
+            console.error("[cloudinary-upload] error:", cloudErr);
           }
         }
 
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
             model,
             jdSnippet:      jdText.slice(0, 300).replace(/\n/g, " "),
             cvFilename:     cvFile.name,
-            cvDriveUrl,
+            cvUrl,
             score:          result.evaluation.overall_score,
             grade:          result.evaluation.grade,
             recommendation: result.evaluation.hiring_decision.recommendation,
