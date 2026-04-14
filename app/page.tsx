@@ -207,13 +207,10 @@ export default function Home() {
         <section className="hero">
           <div className="container">
             <div className="hero-label">AI Hiring Assistant</div>
-            <h1>
-              Screen candidates <strong>smarter</strong>,<br />not faster.
-            </h1>
+            <h1>Screen candidates <strong>smarter</strong>, not faster.</h1>
             <p className="hero-sub">
-              Semantic CV analysis, multi-dimensional scoring, concrete bullet
-              rewrites, and a clear hiring recommendation — powered by a panel
-              of senior AI experts.
+              Professional AI-powered CV analysis, multi-dimensional scoring, and
+              concrete improvement suggestions — in seconds.
             </p>
           </div>
         </section>
