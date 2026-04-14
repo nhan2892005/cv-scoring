@@ -310,23 +310,8 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="config-item flex-center">
-              <label className="toggle-btn">
-                <input
-                  type="checkbox"
-                  checked={compareMarket}
-                  onChange={(e) => setCompareMarket(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-text">So sánh với thị trường</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Model selector */}
-          <div className="model-selector-row">
-            <div className="model-selector">
-              <span className="model-selector-label">Model</span>
+            <div className="config-item">
+              <span className="config-label">AI Model</span>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
@@ -345,9 +330,18 @@ export default function Home() {
                   <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
                 </optgroup>
               </select>
-              <span className={`model-badge ${isGroq ? "groq" : "anthropic"}`}>
-                {isGroq ? "Groq" : "Anthropic"}
-              </span>
+            </div>
+
+            <div className="config-item flex-center">
+              <label className="toggle-btn">
+                <input
+                  type="checkbox"
+                  checked={compareMarket}
+                  onChange={(e) => setCompareMarket(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+                <span className="toggle-text">Market Compare</span>
+              </label>
             </div>
           </div>
 
