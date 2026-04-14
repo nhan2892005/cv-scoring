@@ -1,9 +1,6 @@
+.env.local
 .env
-.venv/
-venv/
-__pycache__/
-*.pyc
-*.pyo
-.DS_Store
-.streamlit/secrets.toml
+.next/
+node_modules/
 *.log
+.DS_Store
