@@ -1,0 +1,90 @@
+/* style.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary: #2563eb;
+    --border: #e2e8f0;
+    --bg-main: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+}
+
+.main .block-container {
+    padding: 3rem 5rem;
+    max-width: 1200px;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-main);
+}
+
+/* Header Hierarchy */
+h1.brand {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--text-main);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+}
+
+.sub {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+}
+
+/* Component Cards */
+.panel {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px; /* Bo góc nhẹ, cứng cáp hơn */
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: border-color 0.2s ease;
+}
+
+.panel h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+}
+
+/* Button Refinement */
+.stButton>button {
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 2rem !important;
+    background-color: var(--primary) !important;
+    border: none !important;
+    transition: opacity 0.2s !important;
+}
+
+.stButton>button:hover {
+    opacity: 0.9 !important;
+}
+
+/* Score Card - No Gradient */
+.score-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.score-card .lbl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.score-card .big {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}

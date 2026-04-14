@@ -15,62 +15,18 @@ from cv_parser import parse_cv
 
 load_dotenv()
 
-st.set_page_config(
-    page_title="AI Resume Screening",
-    page_icon="🎯",
-    layout="wide",
-)
+st.set_page_config(page_title="Resume Evaluation", layout="wide")
 
 # ---------- Global styles ----------
-st.markdown(
-    """
-    <style>
-      .main .block-container {padding-top: 2rem; max-width: 1200px;}
-      h1.brand {font-weight: 800; font-size: 2.2rem; margin-bottom: 0.2rem;}
-      .brand-accent {color: #2563eb;}
-      .sub {color: #64748b; font-size: 0.95rem; margin-bottom: 1.6rem;}
-      .panel {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1.2rem 1.3rem;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-      }
-      .panel h3 {margin-top: 0; margin-bottom: 0.6rem; font-size: 1rem; color:#0f172a;}
-      .score-card {
-        background: linear-gradient(135deg,#2563eb 0%,#7c3aed 100%);
-        color: white; border-radius: 14px; padding: 1.4rem;
-      }
-      .score-card .big {font-size: 3rem; font-weight: 800; line-height: 1;}
-      .score-card .lbl {opacity: 0.85; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;}
-      .grade-chip {
-        display:inline-block; padding:6px 14px; border-radius:999px;
-        color:white; font-weight:700; font-size:0.85rem;
-      }
-      .decision-box {
-        padding: 14px 16px; border-radius: 10px;
-        background: #f8fafc; border-left: 6px solid #2563eb; margin-top: 12px;
-      }
-      .stButton>button[kind="primary"] {
-        background: linear-gradient(135deg,#2563eb,#7c3aed);
-        border: none; font-weight: 700; padding: 0.75rem 1rem;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+def load_css(file_name):
+    with open(file_name, "r", encoding="utf-8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+load_css("style.css")
 
 # ---------- Header ----------
-st.markdown(
-    '<h1 class="brand">🎯 AI <span class="brand-accent">Resume Screening</span></h1>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    '<div class="sub">1. Paste the job description on the left. '
-    "2. Upload a CV on the right. "
-    "3. Click <b>Analyze</b> for a full recruiter-grade breakdown.</div>",
-    unsafe_allow_html=True,
-)
+st.markdown('<h1 class="brand">CV <span class="brand-accent">Feedback</span></h1>', unsafe_allow_html=True)
+st.markdown('<div class="sub">Automated resume screening and gap analysis for technical roles.</div>', unsafe_allow_html=True)
 
 # ---------- Input: two-column layout ----------
 col_jd, col_cv = st.columns(2, gap="large")
@@ -96,12 +52,9 @@ with col_cv:
     st.caption("Accepts PDF, DOCX, or TXT. Use a text-based export (not a scanned image).")
     st.markdown("</div>", unsafe_allow_html=True)
 
-st.write("")
-analyze = st.button(
-    "🚀 Analyze CV",
-    type="primary",
-    use_container_width=True,
-)
+_, center_btn, _ = st.columns([1, 2, 1])
+with center_btn:
+    analyze = st.button("Run Evaluation", type="primary", use_container_width=True)
 
 # ---------- Helpers ----------
 def grade_color(grade: str) -> str:
@@ -127,8 +80,15 @@ def render_score_bar(label: str, value: float, max_value: float) -> None:
 if not analyze:
     st.stop()
 
-api_key = os.getenv("ANTHROPIC_API_KEY", "")
 model = os.getenv("CV_SCORING_MODEL", DEFAULT_MODEL)
+is_groq = "llama" in model.lower() or "mixtral" in model.lower() or "gemma" in model.lower()
+
+if is_groq:
+    api_key = os.getenv("GROQ_API_KEY", "")
+    key_name = "GROQ_API_KEY"
+else:
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    key_name = "ANTHROPIC_API_KEY"
 
 if not jd_text.strip():
     st.error("Please paste a Job Description.")
@@ -137,7 +97,7 @@ if not uploaded:
     st.error("Please upload a CV.")
     st.stop()
 if not api_key:
-    st.error("ANTHROPIC_API_KEY is not set. Add it to your .env file and restart.")
+    st.error(f"{key_name} is not set. Add it to your .env file and restart.")
     st.stop()
 
 try:
