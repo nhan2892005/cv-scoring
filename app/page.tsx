@@ -7,16 +7,16 @@ import { ScreeningResult, ProgressEvent } from "@/lib/types";
 function gradeColor(grade: string) {
   return (
     {
-      "Strong Hire": "#0d7a4e",
-      "Good Fit": "#1b7a3e",
-      Moderate: "#b45309",
-      Weak: "#c0392b",
-    }[grade] ?? "#6b7599"
+      "Strong Hire": "#059669",
+      "Good Fit": "#059669",
+      Moderate: "#d97706",
+      Weak: "#dc2626",
+    }[grade] ?? "#6b7280"
   );
 }
 
 function recColor(rec: string) {
-  return { Hire: "#0d7a4e", Consider: "#b45309", Reject: "#c0392b" }[rec] ?? "#6b7599";
+  return { Hire: "#059669", Consider: "#d97706", Reject: "#dc2626" }[rec] ?? "#6b7280";
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -91,6 +91,27 @@ function MetricBar({
   );
 }
 
+function UploadIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="12" y1="18" x2="12" y2="12" />
+      <polyline points="9 15 12 12 15 15" />
+    </svg>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -104,6 +125,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
+
+  const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
 
   function addLog(msg: string) {
     setLogs((l) => [...l, msg]);
@@ -157,7 +180,7 @@ export default function Home() {
     } finally {
       setRunning(false);
     }
-  }, [jdText, cvFile]);
+  }, [jdText, cvFile, model]);
 
   const ev = result?.evaluation;
   const imp = ev?.improvements;
@@ -170,8 +193,10 @@ export default function Home() {
       <header className="header">
         <div className="container">
           <div className="header-inner">
-            <div className="header-dot" />
-            <span className="header-title">CV Evaluation</span>
+            <div className="header-brand">
+              <div className="header-logo">CV</div>
+              <span className="header-title">CV Evaluation</span>
+            </div>
             <span className="header-tag">Powered by BaoVo</span>
           </div>
         </div>
@@ -183,7 +208,7 @@ export default function Home() {
           <div className="container">
             <div className="hero-label">AI Hiring Assistant</div>
             <h1>
-              Screen candidates <em>smarter</em>,<br />not faster.
+              Screen candidates <strong>smarter</strong>,<br />not faster.
             </h1>
             <p className="hero-sub">
               Semantic CV analysis, multi-dimensional scoring, concrete bullet
@@ -228,7 +253,9 @@ export default function Home() {
                   accept=".pdf,.docx,.txt"
                   onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
                 />
-                <div className="upload-icon">📄</div>
+                <div className="upload-icon">
+                  <UploadIcon />
+                </div>
                 <div className="upload-title">
                   {cvFile ? cvFile.name : "Drop CV here or click to browse"}
                 </div>
@@ -243,13 +270,12 @@ export default function Home() {
           </div>
 
           {/* Model selector */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--r)", padding: "0.5rem 1rem" }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--ink-3)" }}>Model</span>
+          <div className="model-selector-row">
+            <div className="model-selector">
+              <span className="model-selector-label">Model</span>
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                style={{ border: "none", background: "transparent", fontFamily: "'DM Mono', monospace", fontSize: "0.8125rem", color: "var(--ink-2)", cursor: "pointer", outline: "none" }}
               >
                 <optgroup label="Claude (Anthropic)">
                   <option value="claude-opus-4-6">claude-opus-4-6</option>
@@ -266,8 +292,8 @@ export default function Home() {
                   <option value="gemma2-9b-it">gemma2-9b-it</option>
                 </optgroup>
               </select>
-              <span style={{ fontSize: "0.625rem", padding: "2px 8px", borderRadius: "100px", background: ["llama","mixtral","gemma"].some(k => model.includes(k)) ? "#fef8ec" : "#eef3fe", color: ["llama","mixtral","gemma"].some(k => model.includes(k)) ? "var(--amber)" : "var(--primary)", fontWeight: 600 }}>
-                {["llama","mixtral","gemma"].some(k => model.includes(k)) ? "Groq" : "Anthropic"}
+              <span className={`model-badge ${isGroq ? "groq" : "anthropic"}`}>
+                {isGroq ? "Groq" : "Anthropic"}
               </span>
             </div>
           </div>
@@ -387,7 +413,7 @@ export default function Home() {
 
               <Accordion title="Content Issues — bullet rewrites" defaultOpen>
                 {imp.content_issues.length === 0 ? (
-                  <p style={{ fontSize: "0.875rem", color: "var(--green)", padding: "0.75rem 0" }}>
+                  <p className="empty-text">
                     No major content issues detected.
                   </p>
                 ) : (
@@ -403,7 +429,7 @@ export default function Home() {
               </Accordion>
 
               <Accordion title="Skill Gaps">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.5rem", paddingTop: "1rem" }}>
+                <div className="skill-gaps-grid">
                   <div>
                     <div className="card-label">Critical Missing</div>
                     {imp.skill_gaps.critical_missing.map((s, i) => (
@@ -426,7 +452,7 @@ export default function Home() {
               </Accordion>
 
               <Accordion title="Positioning">
-                <div style={{ paddingTop: "0.75rem" }}>
+                <div style={{ paddingTop: "0.5rem" }}>
                   {imp.positioning_issues.map((p, i) => (
                     <div key={i} className="pos-block">
                       <div className="pos-problem">Problem: {p.problem}</div>
@@ -454,7 +480,7 @@ export default function Home() {
 
               <Accordion title="Red Flags">
                 {imp.red_flags.length === 0 ? (
-                  <p style={{ fontSize: "0.875rem", color: "var(--green)", padding: "0.75rem 0" }}>
+                  <p className="empty-text">
                     No red flags detected.
                   </p>
                 ) : (
@@ -493,7 +519,6 @@ export default function Home() {
                 <button className="btn-outline" onClick={() => setShowJson((v) => !v)}>
                   {showJson ? "Hide" : "Show"} Raw JSON
                 </button>
-                <span style={{ width: "0.75rem" }} />
                 <a
                   className="btn-outline"
                   href={`data:application/json;charset=utf-8,${encodeURIComponent(
@@ -506,7 +531,7 @@ export default function Home() {
               </div>
 
               {showJson && (
-                <pre className="json-pre" style={{ marginTop: "1rem" }}>
+                <pre className="json-pre" style={{ marginTop: "0.75rem" }}>
                   {JSON.stringify(result, null, 2)}
                 </pre>
               )}
