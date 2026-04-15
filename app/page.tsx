@@ -24,14 +24,14 @@ function recColor(rec: string) {
 type Lang = "en" | "vi";
 const I18N = {
   en: {
-    brand: "CV Evaluation",
+    brand: "Resumely",
     signIn: "Sign in with Google",
     logout: "Log out",
-    heroLabel: "AI Hiring Assistant",
-    heroTitle1: "Screen candidates ",
-    heroTitle2: "smarter",
-    heroTitle3: ", not faster.",
-    heroSub: "Professional AI-powered CV analysis, multi-dimensional scoring, and concrete improvement suggestions — in seconds.",
+    heroLabel: "Resume Intelligence",
+    heroTitle1: "Your resume, ",
+    heroTitle2: "perfectly tuned",
+    heroTitle3: " for the job.",
+    heroSub: "Resumely scores your CV against any role, spots the gaps, and rewrites what's holding you back.",
     jd: "Job Description",
     jdPlaceholder: "Paste the full job description here…",
     cv: "Candidate CV",
@@ -41,6 +41,7 @@ const I18N = {
     level: "Level",
     model: "AI Model",
     marketCompare: "Market Compare",
+    marketJdText: "Compare this CV against general market requirements for this role/level in 2026.",
     selectOrType: "Select or type...",
     run: "Run Evaluation",
     running: "Analyzing…",
@@ -81,14 +82,14 @@ const I18N = {
     analysisDone: "✅ Analysis complete",
   },
   vi: {
-    brand: "Đánh Giá CV",
+    brand: "Resumely",
     signIn: "Đăng nhập Google",
     logout: "Đăng xuất",
-    heroLabel: "Trợ Lý Tuyển Dụng AI",
-    heroTitle1: "Sàng lọc ứng viên ",
-    heroTitle2: "thông minh hơn",
-    heroTitle3: ", không phải nhanh hơn.",
-    heroSub: "Phân tích CV chuyên nghiệp bằng AI, chấm điểm đa chiều và đưa ra gợi ý cải thiện cụ thể — chỉ trong vài giây.",
+    heroLabel: "Phân Tích CV Thông Minh",
+    heroTitle1: "CV của bạn, ",
+    heroTitle2: "tinh chỉnh hoàn hảo",
+    heroTitle3: " cho từng công việc.",
+    heroSub: "Resumely giúp bạn chấm điểm CV với mọi vị trí, chỉ ra những gì còn thiếu và gợi ý cách viết lại sao cho thuyết phục hơn.",
     jd: "Mô Tả Công Việc",
     jdPlaceholder: "Dán toàn bộ mô tả công việc vào đây…",
     cv: "CV Ứng Viên",
@@ -98,6 +99,7 @@ const I18N = {
     level: "Cấp Bậc",
     model: "Mô Hình AI",
     marketCompare: "So Sánh Thị Trường",
+    marketJdText: "So sánh CV này với những yêu cầu chung của thị trường cho vị trí/cấp bậc này trong năm 2026.",
     selectOrType: "Chọn hoặc nhập...",
     run: "Bắt Đầu Đánh Giá",
     running: "Đang phân tích…",
@@ -260,8 +262,6 @@ export default function Home() {
     if (typeof window !== "undefined") localStorage.setItem("cv_lang", lang);
   }, [lang]);
 
-  const isGroq = ["llama", "mixtral", "gemma"].some((k) => model.includes(k));
-
   function addLog(msg: string) {
     setLogs((l) => [...l, msg]);
     setTimeout(() => {
@@ -274,7 +274,7 @@ export default function Home() {
       setError(t.signInNotice);
       return;
     }
-    if (!jdText.trim() || !cvFile) return;
+    if ((!compareMarket && !jdText.trim()) || !cvFile) return;
     setRunning(true);
     setResult(null);
     setError(null);
@@ -336,8 +336,37 @@ export default function Home() {
         <div className="container">
           <div className="header-inner">
             <div className="header-brand">
-              <div className="header-logo">CV</div>
-              <span className="header-title">{t.brand}</span>
+              <div
+                className="header-logo"
+                style={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 18,
+                  fontWeight: 800,
+                  fontFamily: "'Outfit', 'Inter', sans-serif",
+                  letterSpacing: "-0.02em",
+                  boxShadow: "0 4px 12px -2px rgba(99,102,241,0.45)",
+                }}
+              >
+                R
+              </div>
+              <span
+                className="header-title"
+                style={{
+                  fontFamily: "'Outfit', 'Inter', sans-serif",
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                {t.brand}
+              </span>
             </div>
             <div className="header-auth">
               <div
@@ -468,11 +497,31 @@ export default function Home() {
           {/* Input form */}
           <div className="form-grid">
             <div className="card">
-              <div className="card-label">{t.jd}</div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <div className="card-label" style={{ margin: 0 }}>{t.jd}</div>
+                <label className="toggle-btn" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={compareMarket}
+                    onChange={(e) => setCompareMarket(e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                  <span className="toggle-text">{t.marketCompare}</span>
+                </label>
+              </div>
               <textarea
                 placeholder={t.jdPlaceholder}
-                value={jdText}
+                value={compareMarket ? t.marketJdText : jdText}
                 onChange={(e) => setJdText(e.target.value)}
+                disabled={compareMarket}
+                style={compareMarket ? { cursor: "not-allowed", fontStyle: "italic", color: "#475569" } : undefined}
               />
             </div>
 
@@ -543,7 +592,8 @@ export default function Home() {
                 placeholder={t.selectOrType}
               />
               <datalist id="levels">
-                <option value="Intern / Fresher" />
+                <option value="Intern" />
+                <option value="Fresher" />
                 <option value="Junior" />
                 <option value="Middle / Specialist" />
                 <option value="Senior" />
@@ -571,23 +621,12 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="config-item flex-center">
-              <label className="toggle-btn">
-                <input
-                  type="checkbox"
-                  checked={compareMarket}
-                  onChange={(e) => setCompareMarket(e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-text">{t.marketCompare}</span>
-              </label>
-            </div>
           </div>
 
           <button
             className="btn-primary"
             onClick={handleSubmit}
-            disabled={running || !jdText.trim() || !cvFile}
+            disabled={running || (!compareMarket && !jdText.trim()) || !cvFile}
           >
             {running ? t.running : t.run}
           </button>
