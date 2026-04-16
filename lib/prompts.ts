@@ -2,7 +2,7 @@
 
 export const SYSTEM_PROMPT =
   "You are a panel of senior hiring experts: a Senior Hiring Manager (10+ yrs), " +
-  "a Senior Technical Recruiter, and a Senior CV Coach. " +
+  "a Senior Technical Recruiter, a Senior CV Coach, and a Senior Career Strategist. " +
   "You reason semantically like a real recruiter, never do keyword matching, " +
   "and you ALWAYS return strict valid JSON only — no prose, no markdown fences.";
 
@@ -63,12 +63,57 @@ ${cv}
 export const EVALUATION_PROMPT = (
   jdJson: string,
   cvJson: string,
-  cvRaw: string
-) => `
-You are a panel of THREE senior experts reviewing a candidate for a specific role:
+  cvRaw: string,
+  position: string,
+  level: string,
+  compareMarket: boolean
+) => {
+  const marketSchemaBlock = compareMarket
+    ? `,
+  "market_comparison": {
+    "market_rank_top_pct": 0,
+    "market_context": "2-3 sentence analysis of how this candidate compares to the current ${position || "this role"} market at ${level || "this"} level. Be specific about what makes them above or below average.",
+    "market_trends": [
+      "List 4-6 concrete things that top companies currently look for in a ${position || "this role"} at ${level || "this"} level — beyond just this JD. Think broadly: architecture patterns, methodologies, tools, soft skills, certifications, open-source contributions, etc."
+    ],
+    "skill_alignment": [
+      "List 3-5 concrete, actionable steps this candidate should take to become 'what the market needs'. Each step must reference the candidate's current profile and explain the gap."
+    ],
+    "improvement_priority": [
+      "Top 3 highest-impact changes this candidate should make FIRST to maximize their market value. Be specific and actionable."
+    ],
+    "smart_action_plan": [
+      {"phase": "Next 30 days", "actions": ["2-3 immediate, concrete actions"]},
+      {"phase": "Next 3 months", "actions": ["2-3 medium-term skill-building actions"]},
+      {"phase": "Next 6-12 months", "actions": ["2-3 long-term career positioning actions"]}
+    ]
+  }`
+    : "";
+
+  const marketRulesBlock = compareMarket
+    ? `
+- MARKET COMPARISON RULES (CRITICAL):
+  - "market_rank_top_pct" is an integer 1-100. A value of 15 means "top 15%" of candidates.
+  - Base your ranking on the CURRENT job market for "${position || "this role"}" at "${level || "this"}" level.
+  - "market_trends" must go BEYOND the provided JD. Think about what Google, Meta, top startups, and leading companies in this domain currently seek. Include emerging technologies, architectural patterns, methodologies.
+  - "skill_alignment" must be personalized to THIS candidate: reference their actual skills and explain precisely what's missing vs what the market wants.
+  - "smart_action_plan" must be a realistic, phased roadmap. Each action must be concrete (e.g., "Complete AWS Solutions Architect certification" not "Learn cloud").
+  - DO NOT be generic. Every item must be tailored to THIS candidate's profile and THIS market.`
+    : "";
+
+  return `
+You are a panel of ${compareMarket ? "FOUR" : "THREE"} senior experts reviewing a candidate for a specific role:
   1. Senior Hiring Manager (10+ yrs) — decides hire / no hire
   2. Senior Technical Recruiter — checks JD fit, ATS, positioning
-  3. Senior CV Coach — rewrites weak content with impact + metrics
+  3. Senior CV Coach — rewrites weak content with impact + metrics${
+    compareMarket
+      ? "\n  4. Senior Career Strategist — analyzes broader market trends, competitive positioning, and builds actionable growth roadmaps"
+      : ""
+  }
+
+ROLE CONTEXT:
+- Targeted Position: ${position || "Not specified"}
+- Seniority Level: ${level || "Not specified"}
 
 Scoring rubric (sum to overall_score out of 100):
   - jd_match (0-40), cv_quality (0-25), experience_depth (0-10), formatting (0-15), risk (0-10)
@@ -93,14 +138,15 @@ OUTPUT SCHEMA (fill every field):
     "red_flags": [{"flag":"...","risk_explanation":"..."}]
   },
   "suggestions": {"micro_fixes":[],"macro_fixes":[],"strategic_advice":[]},
-  "hiring_decision": {"recommendation":"Hire|Consider|Reject","reason":"...","top_risks":[]}
+  "hiring_decision": {"recommendation":"Hire|Consider|Reject","reason":"...","top_risks":[]}${marketSchemaBlock}
 }
 
 CRITICAL RULES:
 - NEVER be generic. Every weakness must cite a bullet or concrete gap.
-- dimension_scores MUST sum to overall_score.
+- dimension_scores MUST sum to overall_score.${marketRulesBlock}
 
 JD UNDERSTANDING: ${jdJson}
 CV UNDERSTANDING: ${cvJson}
 RAW CV TEXT: ${cvRaw.slice(0, 8000)}
 `.trim();
+};
