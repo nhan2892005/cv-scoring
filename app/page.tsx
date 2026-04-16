@@ -198,6 +198,7 @@ export default function Home() {
   const imp = ev?.improvements;
   const sug = ev?.suggestions;
   const dim = ev?.dimension_scores;
+  const mkt = ev?.market_comparison;
 
   return (
     <>
@@ -536,7 +537,104 @@ export default function Home() {
                 }}
               </Tabs>
 
+              {/* ─── Market Insight ──────────────────────────── */}
+              {mkt && (
+                <>
+                  <hr className="divider" />
+                  <div className="section-heading">📊 Market Insight</div>
+
+                  {/* Rank + Context */}
+                  <div className="market-top-grid">
+                    <div className="market-rank-card">
+                      <div className="market-rank-ring">
+                        <svg viewBox="0 0 120 120" className="rank-svg">
+                          <circle cx="60" cy="60" r="52" className="rank-track" />
+                          <circle
+                            cx="60" cy="60" r="52"
+                            className="rank-fill"
+                            strokeDasharray={`${(1 - mkt.market_rank_top_pct / 100) * 327} 327`}
+                          />
+                        </svg>
+                        <div className="rank-value">
+                          <span className="rank-number">Top {mkt.market_rank_top_pct}%</span>
+                        </div>
+                      </div>
+                      <div className="market-rank-label">Market Ranking</div>
+                    </div>
+
+                    <div className="market-context-card">
+                      <div className="card-label">Market Context</div>
+                      <p className="market-context-text">{mkt.market_context}</p>
+                    </div>
+                  </div>
+
+                  {/* Market Trends */}
+                  {mkt.market_trends.length > 0 && (
+                    <Accordion title="🔥 What the Market Needs Now" defaultOpen>
+                      <div className="market-trends-list">
+                        {mkt.market_trends.map((trend, i) => (
+                          <div key={i} className="market-trend-item">
+                            <span className="trend-index">{i + 1}</span>
+                            <span>{trend}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Accordion>
+                  )}
+
+                  {/* Skill Alignment */}
+                  {mkt.skill_alignment.length > 0 && (
+                    <Accordion title="🎯 How to Become What the Market Wants">
+                      <div className="skill-alignment-list">
+                        {mkt.skill_alignment.map((item, i) => (
+                          <div key={i} className="alignment-item">
+                            <span className="alignment-arrow">→</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Accordion>
+                  )}
+
+                  {/* Improvement Priority */}
+                  {mkt.improvement_priority.length > 0 && (
+                    <Accordion title="⚡ Top Priorities (Highest Impact First)">
+                      <div className="priority-list">
+                        {mkt.improvement_priority.map((item, i) => (
+                          <div key={i} className="priority-item">
+                            <span className="priority-badge">#{i + 1}</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Accordion>
+                  )}
+
+                  {/* Smart Action Plan */}
+                  {mkt.smart_action_plan.length > 0 && (
+                    <Accordion title="🗺️ Smart Action Plan (Phased Roadmap)" defaultOpen>
+                      <div className="action-plan-timeline">
+                        {mkt.smart_action_plan.map((phase, i) => (
+                          <div key={i} className="plan-phase">
+                            <div className="phase-header">
+                              <span className="phase-dot" />
+                              <span className="phase-title">{phase.phase}</span>
+                            </div>
+                            <div className="phase-actions">
+                              {phase.actions.map((action, j) => (
+                                <div key={j} className="phase-action-item">{action}</div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Accordion>
+                  )}
+                </>
+              )}
+
               <hr className="divider" />
+
 
               <div className="download-row">
                 <button className="btn-outline" onClick={() => setShowJson((v) => !v)}>

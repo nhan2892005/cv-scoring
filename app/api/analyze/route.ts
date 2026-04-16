@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
         const model   = (formData.get("model")   as string | null) ?? DEFAULT_MODEL;
         const position = (formData.get("position") as string | null) ?? "";
         const level    = (formData.get("level")    as string | null) ?? "";
+        const compareMarket = formData.get("compare_market") === "true";
 
         if (!jdText?.trim()) {
           send({ type: "error", message: "Job Description is required." });
@@ -90,9 +91,10 @@ export async function POST(req: NextRequest) {
         }
 
         // ── AI analysis ───────────────────────────────────────────────────
-        const result = await screenCandidate(jdText, cvText, model, (msg) => {
+        const result = await screenCandidate(jdText, cvText, model, position, level, compareMarket, (msg) => {
           send({ type: "progress", message: msg });
         });
+
 
         send({ type: "result", data: result });
 

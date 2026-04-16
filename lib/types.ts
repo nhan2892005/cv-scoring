@@ -86,6 +86,18 @@ export interface DimensionScores {
   risk: number;
 }
 
+export interface MarketComparison {
+  market_rank_top_pct: number;
+  market_context: string;
+  market_trends: string[];
+  skill_alignment: string[];
+  improvement_priority: string[];
+  smart_action_plan: {
+    phase: string;
+    actions: string[];
+  }[];
+}
+
 export interface Evaluation {
   overall_score: number;
   grade: "Strong Hire" | "Good Fit" | "Moderate" | "Weak";
@@ -97,6 +109,7 @@ export interface Evaluation {
   improvements: Improvements;
   suggestions: Suggestions;
   hiring_decision: HiringDecision;
+  market_comparison?: MarketComparison;
 }
 
 export interface ScreeningResult {

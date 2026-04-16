@@ -93,47 +93,62 @@ export async function evaluate(
   model: string,
   jdJson: JDUnderstanding,
   cvJson: CVUnderstanding,
-  cvRaw: string
+  cvRaw: string,
+  position: string,
+  level: string,
+  compareMarket: boolean
 ): Promise<Evaluation> {
   const ev = await callLLM<Evaluation>(
     model,
     EVALUATION_PROMPT(
       JSON.stringify(jdJson, null, 2),
       JSON.stringify(cvJson, null, 2),
-      cvRaw
+      cvRaw,
+      position,
+      level,
+      compareMarket
     ),
     isGroqModel(model) ? 8000 : 16000 // Groq caps at 8k output
   );
-  return normalizeEvaluation(ev);
+  return normalizeEvaluation(ev, compareMarket);
 }
 
 export async function screenCandidate(
   jdText: string,
   cvText: string,
   model: string,
+  position: string,
+  level: string,
+  compareMarket: boolean,
   onProgress: (msg: string) => void
 ): Promise<ScreeningResult> {
   const provider = isGroqModel(model) ? "Groq" : "Claude";
   onProgress(`🔌 Connecting to ${provider} (${model})…`);
 
-  onProgress("📋 Step 1/3 — Reading Job Description…");
+  const totalSteps = compareMarket ? 4 : 3;
+
+  onProgress(`📋 Step 1/${totalSteps} — Reading Job Description…`);
   const jd = await extractJD(model, jdText);
   onProgress(`   ✓ JD parsed — ${jd.role_title} · ${jd.seniority_level}`);
 
-  onProgress("📄 Step 2/3 — Parsing CV…");
+  onProgress(`📄 Step 2/${totalSteps} — Parsing CV…`);
   const cv = await extractCV(model, cvText);
   onProgress(`   ✓ CV parsed — ${cv.candidate_name} · ${cv.career_trajectory.slice(0, 60)}`);
 
-  onProgress("🧠 Step 3/3 — Senior panel evaluating…");
-  const evaluation = await evaluate(model, jd, cv, cvText);
+  onProgress(`🧠 Step 3/${totalSteps} — Senior panel evaluating${compareMarket ? " + market analysis" : ""}…`);
+  const evaluation = await evaluate(model, jd, cv, cvText, position, level, compareMarket);
   onProgress(
     `   ✓ Done — ${evaluation.overall_score}/100 · ${evaluation.grade} · ${evaluation.hiring_decision.recommendation}`
   );
 
+  if (compareMarket && evaluation.market_comparison) {
+    onProgress(`📊 Market insight — Top ${evaluation.market_comparison.market_rank_top_pct}% of ${position} (${level})`);
+  }
+
   return { jd_understanding: jd, cv_understanding: cv, evaluation };
 }
 
-function normalizeEvaluation(ev: Partial<Evaluation>): Evaluation {
+function normalizeEvaluation(ev: Partial<Evaluation>, compareMarket: boolean): Evaluation {
   const base: Evaluation = {
     overall_score: 0,
     grade: "Weak",
@@ -159,5 +174,20 @@ function normalizeEvaluation(ev: Partial<Evaluation>): Evaluation {
     suggestions: { micro_fixes: [], macro_fixes: [], strategic_advice: [] },
     hiring_decision: { recommendation: "Consider", reason: "", top_risks: [] },
   };
-  return { ...base, ...ev } as Evaluation;
+
+  const result = { ...base, ...ev } as Evaluation;
+
+  // Normalize market_comparison if it was requested but came back incomplete
+  if (compareMarket && result.market_comparison) {
+    result.market_comparison = {
+      market_rank_top_pct: result.market_comparison.market_rank_top_pct ?? 50,
+      market_context: result.market_comparison.market_context ?? "",
+      market_trends: result.market_comparison.market_trends ?? [],
+      skill_alignment: result.market_comparison.skill_alignment ?? [],
+      improvement_priority: result.market_comparison.improvement_priority ?? [],
+      smart_action_plan: result.market_comparison.smart_action_plan ?? [],
+    };
+  }
+
+  return result;
 }
