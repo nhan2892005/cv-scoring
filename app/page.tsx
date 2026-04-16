@@ -281,7 +281,7 @@ export default function Home() {
     setLogs([]);
 
     const form = new FormData();
-    form.append("jd_text", jdText);
+    form.append("jd_text", compareMarket ? t.marketJdText : jdText);
     form.append("cv_file", cvFile);
     form.append("model", model);
     form.append("position", position);
