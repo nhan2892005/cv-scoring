@@ -111,7 +111,11 @@ export async function evaluate(
   model: string,
   jdJson: JDUnderstanding,
   cvJson: CVUnderstanding,
-  cvRaw: string
+  cvRaw: string,
+  position: string,
+  level: string,
+  compareMarket: boolean,
+  lang: Lang = "en"
 ): Promise<Evaluation> {
   const ev = await callLLM<Evaluation>(
     model,
@@ -123,7 +127,7 @@ export async function evaluate(
       level,
       compareMarket
     ),
-    lang,
+    lang as Lang,
     isGroqModel(model) ? 8000 : 16000
   );
   return normalizeEvaluation(ev, compareMarket);
@@ -133,21 +137,25 @@ export async function screenCandidate(
   jdText: string,
   cvText: string,
   model: string,
-  onProgress: (msg: string) => void
+  position: string,
+  level: string,
+  compareMarket: boolean,
+  onProgress: (msg: string) => void,
+  lang: Lang = "en"
 ): Promise<ScreeningResult> {
   const provider = isGroqModel(model) ? "Groq" : "Claude";
   onProgress(`🔌 Connecting to ${provider} (${model})…`);
 
   onProgress("📋 Step 1/3 — Reading Job Description…");
-  const jd = await extractJD(model, jdText);
+  const jd = await extractJD(model, jdText, lang);
   onProgress(`   ✓ JD parsed — ${jd.role_title} · ${jd.seniority_level}`);
 
   onProgress("📄 Step 2/3 — Parsing CV…");
-  const cv = await extractCV(model, cvText);
+  const cv = await extractCV(model, cvText, lang);
   onProgress(`   ✓ CV parsed — ${cv.candidate_name} · ${cv.career_trajectory.slice(0, 60)}`);
 
   onProgress("🧠 Step 3/3 — Senior panel evaluating…");
-  const evaluation = await evaluate(model, jd, cv, cvText);
+  const evaluation = await evaluate(model, jd, cv, cvText, position, level, compareMarket, lang);
   onProgress(
     `   ✓ Done — ${evaluation.overall_score}/100 · ${evaluation.grade} · ${evaluation.hiring_decision.recommendation}`
   );
