@@ -162,9 +162,13 @@ body {
   font-size: 0.9375rem;
   font-weight: 400;
   color: var(--ink-3);
-  max-width: 640px;
+  max-width: none;
   margin: 0 auto;
   line-height: 1.6;
+  white-space: nowrap;
+}
+@media (max-width: 820px) {
+  .hero-sub { white-space: normal; max-width: 640px; }
 }
 
 /* ── Form Grid ─────────────────────────────────────────────────────────── */

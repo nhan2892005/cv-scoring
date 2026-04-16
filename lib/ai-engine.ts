@@ -75,28 +75,43 @@ async function callClaude<T>(model: string, prompt: string, maxTokens = 8000): P
   return parseJSON<T>(text);
 }
 
-async function callLLM<T>(model: string, prompt: string, maxTokens = 8000): Promise<T> {
+export type Lang = "en" | "vi";
+
+function langDirective(lang: Lang): string {
+  if (lang === "vi") {
+    return (
+      "\n\nLANGUAGE REQUIREMENT: Write ALL natural-language string values in the output JSON " +
+      "in Vietnamese (Tiếng Việt). This includes: summary, strengths, weaknesses, reason, " +
+      "problem descriptions, improved_version, rewritten_summary, all suggestion items, " +
+      "red_flag descriptions, and any human-readable text. Keep JSON KEYS, enum values " +
+      "(grade: Strong Hire/Good Fit/Moderate/Weak, recommendation: Hire/Consider/Reject, " +
+      "issue_type), numbers, and technical terms (programming languages, frameworks, tools) " +
+      "in English. Do NOT translate proper nouns.\n"
+    );
+  }
+  return "\n\nLANGUAGE REQUIREMENT: Write all natural-language output in English.\n";
+}
+
+async function callLLM<T>(model: string, prompt: string, lang: Lang, maxTokens = 8000): Promise<T> {
+  const finalPrompt = prompt + langDirective(lang);
   return isGroqModel(model)
-    ? callGroq<T>(model, prompt, maxTokens)
-    : callClaude<T>(model, prompt, maxTokens);
+    ? callGroq<T>(model, finalPrompt, maxTokens)
+    : callClaude<T>(model, finalPrompt, maxTokens);
 }
 
-export async function extractJD(model: string, jdText: string): Promise<JDUnderstanding> {
-  return callLLM<JDUnderstanding>(model, JD_EXTRACTION_PROMPT(jdText));
+export async function extractJD(model: string, jdText: string, lang: Lang = "en"): Promise<JDUnderstanding> {
+  return callLLM<JDUnderstanding>(model, JD_EXTRACTION_PROMPT(jdText), lang);
 }
 
-export async function extractCV(model: string, cvText: string): Promise<CVUnderstanding> {
-  return callLLM<CVUnderstanding>(model, CV_EXTRACTION_PROMPT(cvText));
+export async function extractCV(model: string, cvText: string, lang: Lang = "en"): Promise<CVUnderstanding> {
+  return callLLM<CVUnderstanding>(model, CV_EXTRACTION_PROMPT(cvText), lang);
 }
 
 export async function evaluate(
   model: string,
   jdJson: JDUnderstanding,
   cvJson: CVUnderstanding,
-  cvRaw: string,
-  position: string,
-  level: string,
-  compareMarket: boolean
+  cvRaw: string
 ): Promise<Evaluation> {
   const ev = await callLLM<Evaluation>(
     model,
@@ -108,7 +123,8 @@ export async function evaluate(
       level,
       compareMarket
     ),
-    isGroqModel(model) ? 8000 : 16000 // Groq caps at 8k output
+    lang,
+    isGroqModel(model) ? 8000 : 16000
   );
   return normalizeEvaluation(ev, compareMarket);
 }
@@ -117,26 +133,21 @@ export async function screenCandidate(
   jdText: string,
   cvText: string,
   model: string,
-  position: string,
-  level: string,
-  compareMarket: boolean,
   onProgress: (msg: string) => void
 ): Promise<ScreeningResult> {
   const provider = isGroqModel(model) ? "Groq" : "Claude";
   onProgress(`🔌 Connecting to ${provider} (${model})…`);
 
-  const totalSteps = compareMarket ? 4 : 3;
-
-  onProgress(`📋 Step 1/${totalSteps} — Reading Job Description…`);
+  onProgress("📋 Step 1/3 — Reading Job Description…");
   const jd = await extractJD(model, jdText);
   onProgress(`   ✓ JD parsed — ${jd.role_title} · ${jd.seniority_level}`);
 
-  onProgress(`📄 Step 2/${totalSteps} — Parsing CV…`);
+  onProgress("📄 Step 2/3 — Parsing CV…");
   const cv = await extractCV(model, cvText);
   onProgress(`   ✓ CV parsed — ${cv.candidate_name} · ${cv.career_trajectory.slice(0, 60)}`);
 
-  onProgress(`🧠 Step 3/${totalSteps} — Senior panel evaluating${compareMarket ? " + market analysis" : ""}…`);
-  const evaluation = await evaluate(model, jd, cv, cvText, position, level, compareMarket);
+  onProgress("🧠 Step 3/3 — Senior panel evaluating…");
+  const evaluation = await evaluate(model, jd, cv, cvText);
   onProgress(
     `   ✓ Done — ${evaluation.overall_score}/100 · ${evaluation.grade} · ${evaluation.hiring_decision.recommendation}`
   );
