@@ -31,32 +31,56 @@ function parseJSON<T>(raw: string): T {
   return JSON.parse(text) as T;
 }
 
+let currentGroqKeyIndex = 0;
+
 async function callGroq<T>(model: string, prompt: string, maxTokens = 8000): Promise<T> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new Error("GROQ_API_KEY is not set in .env.local");
+  const keysStr = process.env.GROQ_API_KEY;
+  if (!keysStr) throw new Error("GROQ_API_KEY is not set in .env.local");
 
-  const client = new Groq({ apiKey: key });
-  const stream = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: prompt },
-    ],
-    max_tokens: Math.min(maxTokens, 8000), // Groq output limit
-    temperature: 0,
-    stream: true,
-  });
+  const keys = keysStr.split(',').map(k => k.trim()).filter(Boolean);
+  if (keys.length === 0) throw new Error("No valid GROQ_API_KEY found");
 
-  const chunks: string[] = [];
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content;
-    if (delta) chunks.push(delta);
+  let lastError: any;
+
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    const key = keys[currentGroqKeyIndex % keys.length];
+    currentGroqKeyIndex++;
+
+    try {
+      const client = new Groq({ apiKey: key });
+      const stream = await client.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: Math.min(maxTokens, 8000), // Groq output limit
+        temperature: 0,
+        stream: true,
+      });
+
+      const chunks: string[] = [];
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) chunks.push(delta);
+      }
+      return parseJSON<T>(chunks.join(""));
+    } catch (error: any) {
+      lastError = error;
+      if (error?.status === 429 || error?.response?.status === 429 || error?.message?.includes("429")) {
+        console.warn(`[Groq] Key rate limited, switching to next key. Attempt ${attempt + 1}/${keys.length}`);
+        continue;
+      }
+      throw error;
+    }
   }
-  return parseJSON<T>(chunks.join(""));
+
+  throw lastError;
 }
 
 async function callClaude<T>(model: string, prompt: string, maxTokens = 8000): Promise<T> {
   const key = process.env.ANTHROPIC_API_KEY;
+  model = process.env.CLAUDE_MODEL || "none";
   if (!key) throw new Error("ANTHROPIC_API_KEY is not set in .env.local");
 
   const client = new Anthropic({ apiKey: key });
