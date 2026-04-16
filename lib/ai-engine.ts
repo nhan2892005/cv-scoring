@@ -143,9 +143,6 @@ export async function screenCandidate(
   onProgress: (msg: string) => void,
   lang: Lang = "en"
 ): Promise<ScreeningResult> {
-  const provider = isGroqModel(model) ? "Groq" : "Claude";
-  onProgress(`🔌 Connecting to ${provider} (${model})…`);
-
   onProgress("📋 Step 1/3 — Reading Job Description…");
   const jd = await extractJD(model, jdText, lang);
   onProgress(`   ✓ JD parsed — ${jd.role_title} · ${jd.seniority_level}`);
