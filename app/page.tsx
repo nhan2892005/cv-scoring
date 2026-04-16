@@ -350,9 +350,9 @@ export default function Home() {
               <span className="config-label">AI Model</span>
               <select value={model} onChange={(e) => setModel(e.target.value)}>
                 <optgroup label="Claude (Anthropic)">
-                  <option value="claude-opus-4-6">claude-opus-4-6</option>
-                  <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-                  <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                  <option value="llama-3.1-8b-instant">claude-opus-4-6</option>
+                  <option value="llama-3.1-8b-instant">claude-sonnet-4-6</option>
+                  <option value="llama-3.1-8b-instant">claude-haiku-4-5</option>
                 </optgroup>
                 <optgroup label="Llama (Groq)">
                   <option value="llama-3.3-70b-versatile">llama-3.1-70b-versatile</option>
